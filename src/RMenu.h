@@ -14,7 +14,7 @@ private:
     TradeSimulator& tradeSimulator;
     std::string currentUser;
 
-    void printMenu();
+    void printStatusBar();
     int getUserOption();
     void processOption(int option);
 

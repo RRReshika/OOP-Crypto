@@ -13,47 +13,48 @@ Menu::Menu(UserManager& userManager, TransactionManager& transactionManager, Tra
 void Menu::init() {
     while (true) {
         if (currentUser == "") {
-            // Welcome Menu (Step 5.1)
-            UI::printHeader("CRYPTO SIMULATOR - WELCOME");
-            std::cout << " " << UI::BOLD << UI::YELLOW << "1:" << UI::RESET << " Register\n";
-            std::cout << " " << UI::BOLD << UI::YELLOW << "2:" << UI::RESET << " Login\n";
-            std::cout << " " << UI::BOLD << UI::RED << "0:" << UI::RESET << " Exit\n";
-            std::cout << "\nType your choice: ";
+            std::vector<std::string> options = {"Register", "Login", "Exit"};
+            int choice = UI::interactiveMenu("CRYPTO TOOLKIT - WELCOME", options);
             
-            int option = getUserOption();
-            if (option == 1) handleRegister();
-            else if (option == 2) handleLogin();
-            else if (option == 0) break;
-            else {
-                UI::printWarning("Invalid option. Please choose 1, 2, or 0.");
-            }
+            if (choice == 0) handleRegister();
+            else if (choice == 1) handleLogin();
+            else if (choice == 2) break;
         } else {
-            // After Login Menu (Step 5.1)
-            printMenu();
-            int option = getUserOption();
-            if (option == 0) {
+            std::vector<std::string> options = {
+                "Market Analysis (Candlesticks)",
+                "Wallet (Deposit/Withdraw)",
+                "View Transactions",
+                "View Stats",
+                "Simulate Trades (Task 4)",
+                "Logout"
+            };
+            
+            printStatusBar();
+            int choice = UI::interactiveMenu("CRYPTO TOOLKIT - MAIN MENU", options);
+            
+            if (choice == 5) {
                 currentUser = ""; // Logout
                 UI::printSuccess("Logged out successfully.");
+                std::cout << "\nPress Enter to continue...";
+                std::cin.get();
             } else {
-                processOption(option);
+                processOption(choice + 1);
             }
         }
     }
 }
 
-void Menu::printMenu() {
-    UI::printHeader("CRYPTO SIMULATOR - MAIN MENU");
-    std::cout << " " << UI::BOLD << "Logged in as: " << UI::GREEN << currentUser << UI::RESET << "\n";
-    std::cout << "------------------------------------\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "1:" << UI::RESET << " Market Analysis (Candlesticks)\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "2:" << UI::RESET << " Wallet (Deposit/Withdraw)\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "3:" << UI::RESET << " View Transactions\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "4:" << UI::RESET << " View Stats\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "5:" << UI::RESET << " Simulate Trades (Task 4)\n";
-    std::cout << " " << UI::BOLD << UI::RED << "0:" << UI::RESET << " Logout\n";
-    std::cout << "------------------------------------\n";
-    std::cout << "Type your choice: ";
+void Menu::printStatusBar() {
+    Wallet& wallet = userManager.getWallet(currentUser);
+    std::string balanceStr = "Balance: " + std::to_string(wallet.getBalance("USDT")) + " USDT";
+    
+    std::cout << UI::BG_BLUE << UI::WHITE << UI::BOLD;
+    std::cout << " User: " << currentUser << " | " << balanceStr;
+    std::cout << std::string(std::max(0, 40 - (int)currentUser.length() - (int)balanceStr.length() - 8), ' ');
+    std::cout << UI::RESET << "\n";
 }
+
+// Removed printMenu() as it's replaced by interactiveMenu
 
 int Menu::getUserOption() {
     int option = -1;
@@ -75,20 +76,8 @@ int Menu::getUserOption() {
 
 std::string Menu::promptProductSelection() {
     std::vector<std::string> products = tradeSimulator.getMarketData().getProducts();
-    std::cout << "\nAvailable Products:\n";
-    for (size_t i = 0; i < products.size(); ++i) {
-        std::cout << i + 1 << ": " << products[i] << "\n";
-    }
-    std::cout << "Enter product (e.g. ETH/USDT) by number: ";
-    int choice = getUserOption();
-    if (choice > 0 && choice <= static_cast<int>(products.size())) {
-        std::string product = products[choice - 1];
-        // Step 5.2: Validate product exists
-        if (isValidProduct(product)) {
-            return product;
-        }
-    }
-    return "";
+    int choice = UI::interactiveMenu("SELECT PRODUCT", products);
+    return products[choice];
 }
 
 void Menu::processOption(int option) {
@@ -360,25 +349,9 @@ void Menu::handleMarketAnalysis() {
         return;
     }
 
-    UI::printHeader("MARKET ANALYSIS - " + product);
-    // Task 1: Refined timeframe selection
-    std::cout << "Select timeframe:\n";
-    std::cout << "1. Daily\n";
-    std::cout << "2. Monthly\n";
-    std::cout << "3. Yearly\n";
-    std::cout << "Choice: ";
-    
-    std::string tfInput;
-    std::getline(std::cin, tfInput);
-    
-    std::string timeframe = "";
-    if (tfInput == "1" || tfInput == "daily") timeframe = "daily";
-    else if (tfInput == "2" || tfInput == "monthly") timeframe = "monthly";
-    else if (tfInput == "3" || tfInput == "yearly") timeframe = "yearly";
-    else {
-        UI::printWarning("Invalid choice, defaulting to Yearly.");
-        timeframe = "yearly";
-    }
+    std::vector<std::string> timeframes = {"Daily", "Monthly", "Yearly"};
+    int tfChoice = UI::interactiveMenu("SELECT TIMEFRAME", timeframes);
+    std::string timeframe = (tfChoice == 0) ? "daily" : (tfChoice == 1) ? "monthly" : "yearly";
 
     // Load all market orders
     std::vector<MarketOrder> orders = CSVReader::readMarketOrders("data/20200317.csv");
@@ -388,26 +361,31 @@ void Menu::handleMarketAnalysis() {
     std::vector<Candlestick> bids = RMarketAnalysis::computeCandlesticks(orders, product, "bid", timeframe);
 
     auto printTable = [](std::string title, const std::vector<Candlestick>& candles, std::string color) {
-        std::cout << "\n" << UI::BOLD << color << "--- " << title << " ---" << UI::RESET << "\n";
+        std::cout << "\n" << UI::BOLD << color << " " << UI::TL << std::string(68, UI::H[0]) << UI::TR << UI::RESET << "\n";
+        std::cout << UI::BOLD << color << " " << UI::V << " " << title << std::string(67 - title.length(), ' ') << UI::V << UI::RESET << "\n";
+        std::cout << UI::BOLD << color << " " << UI::ML << std::string(68, UI::H[0]) << UI::MR << UI::RESET << "\n";
+        
         if (candles.empty()) {
-            std::cout << "No data available for this selection.\n";
-            return;
+            std::cout << " " << UI::V << " No data available for this selection." << std::string(32, ' ') << UI::V << "\n";
+        } else {
+            std::cout << " " << UI::V << " " << std::left << std::setw(20) << "Date" 
+                      << std::setw(12) << "Open" 
+                      << std::setw(12) << "High" 
+                      << std::setw(12) << "Low" 
+                      << std::setw(11) << "Close" << UI::V << "\n";
+            std::cout << " " << UI::ML << std::string(68, UI::H[0]) << UI::MR << "\n";
+            
+            for (const auto& c : candles) {
+                std::string trendColor = (c.close >= c.open) ? UI::GREEN : UI::RED;
+                std::cout << " " << UI::V << " " << trendColor << std::left << std::setw(20) << c.date 
+                          << std::fixed << std::setprecision(4)
+                          << std::setw(12) << c.open 
+                          << std::setw(12) << c.high 
+                          << std::setw(12) << c.low 
+                          << std::setw(11) << c.close << UI::RESET << UI::V << "\n";
+            }
         }
-        // Task 1: Refined table headers
-        std::cout << std::left << std::setw(20) << "Date" 
-                  << std::setw(12) << "Open" 
-                  << std::setw(12) << "High" 
-                  << std::setw(12) << "Low" 
-                  << std::setw(12) << "Close" << "\n";
-        std::cout << std::string(68, '-') << "\n";
-        for (const auto& c : candles) {
-            std::cout << std::left << std::setw(20) << c.date 
-                      << std::fixed << std::setprecision(4)
-                      << std::setw(12) << c.open 
-                      << std::setw(12) << c.high 
-                      << std::setw(12) << c.low 
-                      << std::setw(12) << c.close << "\n";
-        }
+        std::cout << " " << UI::BL << std::string(68, UI::H[0]) << UI::BR << "\n";
     };
 
     printTable("Asks Candlestick Summary", asks, UI::RED);
@@ -423,25 +401,32 @@ void Menu::handleWallet() {
     
     UI::printHeader("LAST 5 TRANSACTIONS");
     std::vector<Transaction> recent = transactionManager.getRecentTransactions(currentUser, 5);
-    if (recent.empty()) {
-        std::cout << " No transactions found.\n";
-    } else {
-        // Task 3: Refined table headers
-        std::cout << std::left << std::setw(20) << "Date & Time" 
+    
+    auto printTransTable = [](const std::vector<Transaction>& ts) {
+        std::cout << " " << UI::TL << std::string(72, UI::H[0]) << UI::TR << "\n";
+        std::cout << " " << UI::V << " " << std::left << std::setw(20) << "Date & Time" 
                   << std::setw(12) << "Type" 
                   << std::setw(15) << "Product" 
                   << std::setw(10) << "Amount" 
-                  << std::setw(15) << "Balance After" << "\n";
-        std::cout << std::string(72, '-') << "\n";
-        for (const auto& t : recent) {
-            std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
-            std::cout << std::left << std::setw(20) << t.timestamp 
-                      << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
-                      << std::setw(15) << t.product 
-                      << std::setw(10) << t.amount 
-                      << std::setw(15) << t.balanceAfter << "\n";
+                  << std::setw(11) << "Balance After" << UI::V << "\n";
+        std::cout << " " << UI::ML << std::string(72, UI::H[0]) << UI::MR << "\n";
+        
+        if (ts.empty()) {
+            std::cout << " " << UI::V << " No transactions found." << std::string(48, ' ') << UI::V << "\n";
+        } else {
+            for (const auto& t : ts) {
+                std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
+                std::cout << " " << UI::V << " " << std::left << std::setw(20) << t.timestamp 
+                          << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
+                          << std::setw(15) << t.product 
+                          << std::setw(10) << t.amount 
+                          << std::setw(11) << t.balanceAfter << UI::V << "\n";
+            }
         }
-    }
+        std::cout << " " << UI::BL << std::string(72, UI::H[0]) << UI::BR << "\n";
+    };
+
+    printTransTable(recent);
     
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
@@ -454,26 +439,36 @@ void Menu::handleTransactions() {
     std::getline(std::cin, product);
     
     std::vector<Transaction> ts = transactionManager.getTransactions(currentUser);
-    if (ts.empty()) {
-        std::cout << " No transactions found.\n";
-    } else {
-        // Task 3: Refined table headers
-        std::cout << std::left << std::setw(20) << "Date & Time" 
+    std::vector<Transaction> filtered;
+    for (const auto& t : ts) {
+        if (product == "" || t.product == product) filtered.push_back(t);
+    }
+
+    auto printTransTable = [](const std::vector<Transaction>& ts) {
+        std::cout << " " << UI::TL << std::string(72, UI::H[0]) << UI::TR << "\n";
+        std::cout << " " << UI::V << " " << std::left << std::setw(20) << "Date & Time" 
                   << std::setw(12) << "Type" 
                   << std::setw(15) << "Product" 
                   << std::setw(10) << "Amount" 
-                  << std::setw(15) << "Balance After" << "\n";
-        std::cout << std::string(72, '-') << "\n";
-        for (const auto& t : ts) {
-            if (product != "" && t.product != product) continue;
-            std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
-            std::cout << std::left << std::setw(20) << t.timestamp 
-                      << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
-                      << std::setw(15) << t.product 
-                      << std::setw(10) << t.amount 
-                      << std::setw(15) << t.balanceAfter << "\n";
+                  << std::setw(11) << "Balance After" << UI::V << "\n";
+        std::cout << " " << UI::ML << std::string(72, UI::H[0]) << UI::MR << "\n";
+        
+        if (ts.empty()) {
+            std::cout << " " << UI::V << " No transactions found." << std::string(48, ' ') << UI::V << "\n";
+        } else {
+            for (const auto& t : ts) {
+                std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
+                std::cout << " " << UI::V << " " << std::left << std::setw(20) << t.timestamp 
+                          << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
+                          << std::setw(15) << t.product 
+                          << std::setw(10) << t.amount 
+                          << std::setw(11) << t.balanceAfter << UI::V << "\n";
+            }
         }
-    }
+        std::cout << " " << UI::BL << std::string(72, UI::H[0]) << UI::BR << "\n";
+    };
+
+    printTransTable(filtered);
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
 }
@@ -567,17 +562,21 @@ void Menu::handleStats() {
     std::vector<Transaction> all = transactionManager.getTransactions(currentUser);
     TradeSimulator::Stats stats = tradeSimulator.getStats(currentUser, all, dateStr);
     
-    std::cout << "\nUser Activity Summary (" << (dateStr == "" ? "All Time" : dateStr) << "):\n";
-    std::cout << "------------------------------------\n";
-    std::cout << "Total Asks: " << UI::BOLD << UI::YELLOW << stats.totalAsks << UI::RESET << "\n";
-    std::cout << "Total Bids: " << UI::BOLD << UI::GREEN << stats.totalBids << UI::RESET << "\n";
-    std::cout << "\nPer Product Breakdown:\n";
+    std::cout << "\n " << UI::TL << std::string(38, UI::H[0]) << UI::TR << "\n";
+    std::cout << " " << UI::V << " User Activity Summary (" << (dateStr == "" ? "All Time" : dateStr) << ")" << std::string(38 - 24 - (dateStr == "" ? 8 : (int)dateStr.length()), ' ') << UI::V << "\n";
+    std::cout << " " << UI::ML << std::string(38, UI::H[0]) << UI::MR << "\n";
+    std::cout << " " << UI::V << " Total Asks: " << UI::BOLD << UI::YELLOW << std::setw(24) << stats.totalAsks << UI::RESET << " " << UI::V << "\n";
+    std::cout << " " << UI::V << " Total Bids: " << UI::BOLD << UI::GREEN << std::setw(24) << stats.totalBids << UI::RESET << " " << UI::V << "\n";
+    std::cout << " " << UI::ML << std::string(38, UI::H[0]) << UI::MR << "\n";
+    
     for (const auto& pair : stats.productBreakdown) {
-        std::cout << UI::BOLD << pair.first << ":" << UI::RESET << "\n";
-        std::cout << "  Asks: " << pair.second.asks << "\n";
-        std::cout << "  Bids: " << pair.second.bids << "\n";
+        std::string line = pair.first + ": A:" + std::to_string(pair.second.asks) + " B:" + std::to_string(pair.second.bids);
+        std::cout << " " << UI::V << " " << line << std::string(37 - line.length(), ' ') << UI::V << "\n";
     }
-    std::cout << "\nTotal Money Spent (Monthly): " << UI::BOLD << UI::CYAN << stats.totalSpent << " USDT" << UI::RESET << "\n";
+    
+    std::cout << " " << UI::ML << std::string(38, UI::H[0]) << UI::MR << "\n";
+    std::cout << " " << UI::V << " Total Spent: " << UI::BOLD << UI::CYAN << std::setw(18) << std::fixed << std::setprecision(2) << stats.totalSpent << " USDT" << UI::RESET << " " << UI::V << "\n";
+    std::cout << " " << UI::BL << std::string(38, UI::H[0]) << UI::BR << "\n";
     
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
@@ -589,11 +588,12 @@ void Menu::handleSimulateTrading() {
     std::cout << "Simulating trades for all products...\n\n";
     std::vector<TradeSimulator::SimulationResult> results = tradeSimulator.simulateTradingActivities(currentUser, userManager, transactionManager);
     
+    std::cout << " " << UI::TL << std::string(38, UI::H[0]) << UI::TR << "\n";
     for (const auto& res : results) {
-        std::cout << UI::BOLD << res.product << ":" << UI::RESET << "\n";
-        std::cout << "  " << res.bidsCreated << " Bids created\n";
-        std::cout << "  " << res.asksCreated << " Asks created\n\n";
+        std::string line = res.product + ": B:" + std::to_string(res.bidsCreated) + " A:" + std::to_string(res.asksCreated);
+        std::cout << " " << UI::V << " " << line << std::string(37 - line.length(), ' ') << UI::V << "\n";
     }
+    std::cout << " " << UI::BL << std::string(38, UI::H[0]) << UI::BR << "\n";
     
     UI::printSuccess("Trades saved successfully.");
     std::cout << "\nPress Enter to continue...";
