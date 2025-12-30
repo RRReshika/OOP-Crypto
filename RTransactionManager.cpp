@@ -30,6 +30,19 @@ std::vector<Transaction> TransactionManager::getTransactions(std::string usernam
     return userTransactions;
 }
 
+std::vector<Transaction> TransactionManager::getRecentTransactions(std::string username, int count, std::string product) {
+    std::vector<Transaction> filtered;
+    for (auto it = transactions.rbegin(); it != transactions.rend(); ++it) {
+        if (it->username == username) {
+            if (product == "" || it->product == product) {
+                filtered.push_back(*it);
+                if (filtered.size() >= count) break;
+            }
+        }
+    }
+    return filtered;
+}
+
 void TransactionManager::loadTransactions() {
     std::vector<std::vector<std::string>> rows = CSVReader::readCSV(filename);
     for (const auto& tokens : rows) {

@@ -8,6 +8,7 @@ public:
     TransactionManager(std::string filename);
     void saveTransaction(Transaction transaction);
     std::vector<Transaction> getTransactions(std::string username);
+    std::vector<Transaction> getRecentTransactions(std::string username, int count = 5, std::string product = "");
 
 private:
     std::string filename;

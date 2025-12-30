@@ -9,6 +9,8 @@ public:
     void insertCurrency(std::string type, double amount);
     bool removeCurrency(std::string type, double amount);
     bool containsCurrency(std::string type, double amount);
+    void deposit(std::string type, double amount);
+    bool withdraw(std::string type, double amount);
     double getBalance(std::string type);
     std::string toString();
 

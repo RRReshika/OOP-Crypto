@@ -26,7 +26,7 @@ void Menu::init() {
             printMenu();
             int option = getUserOption();
             processOption(option);
-            if (option == 8) currentUser = ""; // Logout
+            if (option == 11) currentUser = ""; // Logout
         }
     }
 }
@@ -41,9 +41,12 @@ void Menu::printMenu() {
     std::cout << " " << UI::BOLD << UI::CYAN << "3:" << UI::RESET << " Make Bid\n";
     std::cout << " " << UI::BOLD << UI::CYAN << "4:" << UI::RESET << " Wallet\n";
     std::cout << " " << UI::BOLD << UI::CYAN << "5:" << UI::RESET << " Transactions\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "6:" << UI::RESET << " Continue (Simulate Step)\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "7:" << UI::RESET << " Market Analysis\n";
-    std::cout << " " << UI::BOLD << UI::RED << "8:" << UI::RESET << " Logout\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "6:" << UI::RESET << " Deposit\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "7:" << UI::RESET << " Withdraw\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "8:" << UI::RESET << " Market Stats\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "9:" << UI::RESET << " Continue (Simulate Step)\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "10:" << UI::RESET << " Market Analysis\n";
+    std::cout << " " << UI::BOLD << UI::RED << "11:" << UI::RESET << " Logout\n";
     std::cout << "------------------------------------\n";
     std::cout << "Type your choice: ";
 }
@@ -81,37 +84,13 @@ void Menu::processOption(int option) {
         case 2: handleMakeOffer(); break;
         case 3: handleMakeBid(); break;
         case 4: handleWallet(); break;
-        case 5: {
-            
-            UI::printHeader("YOUR TRANSACTIONS");
-            std::vector<Transaction> ts = transactionManager.getTransactions(currentUser);
-            if (ts.empty()) {
-                std::cout << "No transactions found.\n";
-            } else {
-                std::cout << std::left << std::setw(20) << "Timestamp" 
-                          << std::setw(10) << "Type" 
-                          << std::setw(12) << "Product" 
-                          << std::setw(12) << "Amount" 
-                          << std::setw(12) << "Price" << "\n";
-                std::cout << std::string(66, '-') << "\n";
-                for (const auto& t : ts) {
-                    std::string typeColor = (t.type == TransactionType::ask) ? UI::RED : UI::GREEN;
-                    std::cout << std::left << std::setw(20) << t.timestamp 
-                              << typeColor << std::setw(10) << Transaction::typeToString(t.type) << UI::RESET
-                              << std::setw(12) << t.product 
-                              << std::fixed << std::setprecision(4)
-                              << std::setw(12) << t.amount 
-                              << std::setw(12) << t.price << "\n";
-                }
-            }
-            std::cout << "\nPress Enter to continue...";
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cin.get();
-            break;
-        }
-        case 6: handleContinue(); break;
-        case 7: handleMarketAnalysis(); break;
-        case 8: break;
+        case 5: handleTransactions(); break;
+        case 6: handleDeposit(); break;
+        case 7: handleWithdraw(); break;
+        case 8: handleStats(); break;
+        case 9: handleContinue(); break;
+        case 10: handleMarketAnalysis(); break;
+        case 11: break; // Logout handled in init()
         default: std::cout << "Invalid option\n"; break;
     }
 }
@@ -314,15 +293,6 @@ void Menu::handleMakeBid() {
     }
 }
 
-void Menu::handleWallet() {
-    
-    UI::printHeader("YOUR WALLET");
-    std::cout << userManager.getWallet(currentUser).toString();
-    std::cout << "------------------------------------\n";
-    std::cout << "\nPress Enter to continue...";
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cin.get();
-}
 
 void Menu::handleContinue() {
     tradeSimulator.generateOrders();
@@ -392,6 +362,147 @@ void Menu::handleMarketAnalysis() {
     printTable("ASKS (SELL ORDERS)", asks, UI::RED);
     printTable("BIDS (BUY ORDERS)", bids, UI::GREEN);
 
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+void Menu::handleWallet() {
+    UI::printHeader("WALLET BALANCE");
+    Wallet& wallet = userManager.getWallet(currentUser);
+    std::cout << wallet.toString() << "\n";
+    
+    UI::printHeader("LAST 5 TRANSACTIONS");
+    std::vector<Transaction> recent = transactionManager.getRecentTransactions(currentUser, 5);
+    if (recent.empty()) {
+        std::cout << " No transactions found.\n";
+    } else {
+        std::cout << std::left << std::setw(20) << "Timestamp" 
+                  << std::setw(12) << "Type" 
+                  << std::setw(15) << "Product" 
+                  << std::setw(10) << "Amount" 
+                  << std::setw(10) << "Price" 
+                  << std::setw(10) << "Balance" << "\n";
+        std::cout << std::string(77, '-') << "\n";
+        for (const auto& t : recent) {
+            std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
+            std::cout << std::left << std::setw(20) << t.timestamp 
+                      << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
+                      << std::setw(15) << t.product 
+                      << std::setw(10) << t.amount 
+                      << std::setw(10) << t.price 
+                      << std::setw(10) << t.balanceAfter << "\n";
+        }
+    }
+    
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+void Menu::handleTransactions() {
+    UI::printHeader("YOUR TRANSACTIONS");
+    std::cout << "Filter by product (leave empty for all): ";
+    std::string product;
+    std::getline(std::cin, product);
+    
+    std::vector<Transaction> ts = transactionManager.getTransactions(currentUser);
+    if (ts.empty()) {
+        std::cout << " No transactions found.\n";
+    } else {
+        std::cout << std::left << std::setw(20) << "Timestamp" 
+                  << std::setw(12) << "Type" 
+                  << std::setw(15) << "Product" 
+                  << std::setw(10) << "Amount" 
+                  << std::setw(10) << "Price" 
+                  << std::setw(10) << "Balance" << "\n";
+        std::cout << std::string(77, '-') << "\n";
+        for (const auto& t : ts) {
+            if (product != "" && t.product != product) continue;
+            std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
+            std::cout << std::left << std::setw(20) << t.timestamp 
+                      << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
+                      << std::setw(15) << t.product 
+                      << std::setw(10) << t.amount 
+                      << std::setw(10) << t.price 
+                      << std::setw(10) << t.balanceAfter << "\n";
+        }
+    }
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+void Menu::handleDeposit() {
+    UI::printHeader("DEPOSIT FUNDS");
+    std::cout << "Enter currency (e.g., USDT): ";
+    std::string type;
+    std::getline(std::cin, type);
+    std::cout << "Enter amount: ";
+    std::string amountStr;
+    std::getline(std::cin, amountStr);
+    
+    try {
+        double amount = std::stod(amountStr);
+        if (amount <= 0) throw std::runtime_error("Amount must be positive.");
+        
+        Wallet& wallet = userManager.getWallet(currentUser);
+        wallet.deposit(type, amount);
+        userManager.saveWallets();
+        
+        transactionManager.saveTransaction(Transaction(
+            CSVReader::getCurrentTimestamp(), currentUser, TransactionType::deposit, type, amount, 1.0, wallet.getBalance(type)
+        ));
+        
+        UI::printSuccess("Deposit successful!");
+    } catch (const std::exception& e) {
+        UI::printError(e.what());
+    }
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+void Menu::handleWithdraw() {
+    UI::printHeader("WITHDRAW FUNDS");
+    std::cout << "Enter currency (e.g., USDT): ";
+    std::string type;
+    std::getline(std::cin, type);
+    std::cout << "Enter amount: ";
+    std::string amountStr;
+    std::getline(std::cin, amountStr);
+    
+    try {
+        double amount = std::stod(amountStr);
+        if (amount <= 0) throw std::runtime_error("Amount must be positive.");
+        
+        Wallet& wallet = userManager.getWallet(currentUser);
+        if (wallet.withdraw(type, amount)) {
+            userManager.saveWallets();
+            transactionManager.saveTransaction(Transaction(
+                CSVReader::getCurrentTimestamp(), currentUser, TransactionType::withdrawal, type, amount, 1.0, wallet.getBalance(type)
+            ));
+            UI::printSuccess("Withdrawal successful!");
+        } else {
+            UI::printError("Insufficient balance.");
+        }
+    } catch (const std::exception& e) {
+        UI::printError(e.what());
+    }
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+void Menu::handleStats() {
+    UI::printHeader("USER STATISTICS");
+    std::cout << "Enter timeframe (YYYY-MM-DD or leave empty for all): ";
+    std::string timeframe;
+    std::getline(std::cin, timeframe);
+    
+    std::vector<Transaction> all = transactionManager.getTransactions(currentUser);
+    TradeSimulator::Stats stats = tradeSimulator.getStats(currentUser, all, timeframe);
+    
+    std::cout << " Statistics for " << (timeframe == "" ? "All Time" : timeframe) << ":\n";
+    std::cout << " ------------------------------------\n";
+    std::cout << " Total Asks: " << UI::BOLD << UI::YELLOW << stats.asks << UI::RESET << "\n";
+    std::cout << " Total Bids: " << UI::BOLD << UI::GREEN << stats.bids << UI::RESET << "\n";
+    std::cout << " Total Spent: " << UI::BOLD << UI::CYAN << stats.totalSpent << " USDT" << UI::RESET << "\n";
+    
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
 }

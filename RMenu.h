@@ -24,6 +24,10 @@ private:
     void handleMakeOffer();
     void handleMakeBid();
     void handleWallet();
+    void handleTransactions();
+    void handleDeposit();
+    void handleWithdraw();
+    void handleStats();
     void handleContinue();
     void handleMarketAnalysis();
     void handleForgotUsername();

@@ -18,6 +18,16 @@ bool Wallet::removeCurrency(std::string type, double amount) {
     return true;
 }
 
+void Wallet::deposit(std::string type, double amount) {
+    if (amount <= 0) return;
+    insertCurrency(type, amount);
+}
+
+bool Wallet::withdraw(std::string type, double amount) {
+    if (amount <= 0) return false;
+    return removeCurrency(type, amount);
+}
+
 bool Wallet::containsCurrency(std::string type, double amount) {
     if (currencies.count(type) == 0) return false;
     return currencies[type] >= amount;
