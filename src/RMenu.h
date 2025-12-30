@@ -28,9 +28,15 @@ private:
     void handleDeposit();
     void handleWithdraw();
     void handleStats();
+    void handleSimulateTrading();
     void handleContinue();
     void handleMarketAnalysis();
     void handleForgotUsername();
     void handlePasswordReset();
     std::string promptProductSelection();
+
+    // Validation helpers
+    bool isValidProduct(const std::string& product);
+    bool isValidTimeframe(const std::string& timeframe);
+    bool isValidDate(const std::string& date);
 };

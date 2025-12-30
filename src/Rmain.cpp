@@ -5,9 +5,9 @@
 #include "RTradeSimulator.h"
 
 int main() {
-    MarketData marketData("market.csv");
-    UserManager userManager("users.csv", "wallets.csv");
-    TransactionManager transactionManager("transactions.csv");
+    MarketData marketData("data/20200317.csv");
+    UserManager userManager("data/users.csv", "data/wallets.csv");
+    TransactionManager transactionManager("data/transactions.csv");
     TradeSimulator tradeSimulator(marketData);
 
     Menu menu(userManager, transactionManager, tradeSimulator);

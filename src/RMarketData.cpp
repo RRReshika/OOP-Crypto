@@ -104,3 +104,18 @@ std::vector<Candlestick> MarketData::computeCandlesticks(const std::vector<Order
 
     return candlesticks;
 }
+
+double MarketData::getMostRecentClosePrice(std::string product) {
+    std::vector<Order> productOrders;
+    for (const auto& o : orders) {
+        if (o.product == product) productOrders.push_back(o);
+    }
+    if (productOrders.empty()) return 0.0;
+    
+    // Sort by timestamp to find the latest
+    std::sort(productOrders.begin(), productOrders.end(), [](const Order& a, const Order& b) {
+        return a.timestamp < b.timestamp;
+    });
+    
+    return productOrders.back().price;
+}

@@ -5,48 +5,52 @@
 #include <iomanip>
 #include <limits>
 #include "RUIUtils.h"
+#include "RMarketAnalysis.h"
 
 Menu::Menu(UserManager& userManager, TransactionManager& transactionManager, TradeSimulator& tradeSimulator)
     : userManager(userManager), transactionManager(transactionManager), tradeSimulator(tradeSimulator), currentUser("") {}
 
 void Menu::init() {
     while (true) {
-        
         if (currentUser == "") {
+            // Welcome Menu (Step 5.1)
             UI::printHeader("CRYPTO SIMULATOR - WELCOME");
             std::cout << " " << UI::BOLD << UI::YELLOW << "1:" << UI::RESET << " Register\n";
             std::cout << " " << UI::BOLD << UI::YELLOW << "2:" << UI::RESET << " Login\n";
-            std::cout << " " << UI::BOLD << UI::RED << "3:" << UI::RESET << " Exit\n";
+            std::cout << " " << UI::BOLD << UI::RED << "0:" << UI::RESET << " Exit\n";
             std::cout << "\nType your choice: ";
+            
             int option = getUserOption();
             if (option == 1) handleRegister();
             else if (option == 2) handleLogin();
-            else if (option == 3) break;
+            else if (option == 0) break;
+            else {
+                UI::printWarning("Invalid option. Please choose 1, 2, or 0.");
+            }
         } else {
+            // After Login Menu (Step 5.1)
             printMenu();
             int option = getUserOption();
-            processOption(option);
-            if (option == 11) currentUser = ""; // Logout
+            if (option == 0) {
+                currentUser = ""; // Logout
+                UI::printSuccess("Logged out successfully.");
+            } else {
+                processOption(option);
+            }
         }
     }
 }
 
 void Menu::printMenu() {
-    
     UI::printHeader("CRYPTO SIMULATOR - MAIN MENU");
     std::cout << " " << UI::BOLD << "Logged in as: " << UI::GREEN << currentUser << UI::RESET << "\n";
     std::cout << "------------------------------------\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "1:" << UI::RESET << " Exchange Stats\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "2:" << UI::RESET << " Make Offer (Ask)\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "3:" << UI::RESET << " Make Bid\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "4:" << UI::RESET << " Wallet\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "5:" << UI::RESET << " Transactions\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "6:" << UI::RESET << " Deposit\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "7:" << UI::RESET << " Withdraw\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "8:" << UI::RESET << " Market Stats\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "9:" << UI::RESET << " Continue (Simulate Step)\n";
-    std::cout << " " << UI::BOLD << UI::CYAN << "10:" << UI::RESET << " Market Analysis\n";
-    std::cout << " " << UI::BOLD << UI::RED << "11:" << UI::RESET << " Logout\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "1:" << UI::RESET << " Market Analysis (Candlesticks)\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "2:" << UI::RESET << " Wallet (Deposit/Withdraw)\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "3:" << UI::RESET << " View Transactions\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "4:" << UI::RESET << " View Stats\n";
+    std::cout << " " << UI::BOLD << UI::CYAN << "5:" << UI::RESET << " Simulate Trades (Task 4)\n";
+    std::cout << " " << UI::BOLD << UI::RED << "0:" << UI::RESET << " Logout\n";
     std::cout << "------------------------------------\n";
     std::cout << "Type your choice: ";
 }
@@ -54,11 +58,16 @@ void Menu::printMenu() {
 int Menu::getUserOption() {
     int option = -1;
     std::string line;
+    // Step 5.2: Use getline(cin, line) for all inputs
     if (std::getline(std::cin, line)) {
+        if (line.empty()) return -1;
         try {
+            // Step 5.2: Validate numeric using try/catch with stoi
             option = std::stoi(line);
-        } catch (...) {
-            option = -1;
+        } catch (const std::invalid_argument& e) {
+            option = -1; // Not a number
+        } catch (const std::out_of_range& e) {
+            option = -1; // Number too large
         }
     }
     return option;
@@ -70,28 +79,40 @@ std::string Menu::promptProductSelection() {
     for (size_t i = 0; i < products.size(); ++i) {
         std::cout << i + 1 << ": " << products[i] << "\n";
     }
-    std::cout << "Select product by number: ";
+    std::cout << "Enter product (e.g. ETH/USDT) by number: ";
     int choice = getUserOption();
     if (choice > 0 && choice <= static_cast<int>(products.size())) {
-        return products[choice - 1];
+        std::string product = products[choice - 1];
+        // Step 5.2: Validate product exists
+        if (isValidProduct(product)) {
+            return product;
+        }
     }
     return "";
 }
 
 void Menu::processOption(int option) {
     switch (option) {
-        case 1: handleExchangeStats(); break;
-        case 2: handleMakeOffer(); break;
-        case 3: handleMakeBid(); break;
-        case 4: handleWallet(); break;
-        case 5: handleTransactions(); break;
-        case 6: handleDeposit(); break;
-        case 7: handleWithdraw(); break;
-        case 8: handleStats(); break;
-        case 9: handleContinue(); break;
-        case 10: handleMarketAnalysis(); break;
-        case 11: break; // Logout handled in init()
-        default: std::cout << "Invalid option\n"; break;
+        case 1: handleMarketAnalysis(); break;
+        case 2: {
+            UI::printHeader("WALLET MANAGEMENT");
+            Wallet& wallet = userManager.getWallet(currentUser);
+            std::cout << "Current Balance:\n" << wallet.toString() << "\n";
+            std::cout << "------------------------------------\n";
+            std::cout << " 1: Deposit\n";
+            std::cout << " 2: Withdraw\n";
+            std::cout << " 0: Back\n";
+            std::cout << "Choice: ";
+            int sub = getUserOption();
+            if (sub == 1) handleDeposit();
+            else if (sub == 2) handleWithdraw();
+            break;
+        }
+        case 3: handleTransactions(); break;
+        case 4: handleStats(); break;
+        case 5: handleSimulateTrading(); break;
+        case 0: break; // Logout handled in init()
+        default: std::cout << "[!] Invalid option\n"; break;
     }
 }
 
@@ -235,20 +256,34 @@ void Menu::handleExchangeStats() {
 void Menu::handleMakeOffer() {
     std::string product = promptProductSelection();
     if (product == "") {
-        std::cout << "\n[!] Invalid product selection.\n";
+        UI::printWarning("Invalid product selection.");
         return;
     }
 
     double amount, price;
+    // Step 5.2: Validate numeric amount using try/catch and stod
     std::cout << "Enter amount to sell: ";
     std::string amountStr;
     std::getline(std::cin, amountStr);
-    try { amount = std::stod(amountStr); } catch (...) { std::cout << "[!] Invalid amount.\n"; return; }
+    try { 
+        amount = std::stod(amountStr); 
+        if (amount <= 0) throw std::runtime_error("Amount must be positive.");
+    } catch (...) { 
+        UI::printError("Invalid amount. Please enter a positive number."); 
+        return; 
+    }
 
+    // Step 5.2: Validate numeric price using try/catch and stod
     std::cout << "Enter price: ";
     std::string priceStr;
     std::getline(std::cin, priceStr);
-    try { price = std::stod(priceStr); } catch (...) { std::cout << "[!] Invalid price.\n"; return; }
+    try { 
+        price = std::stod(priceStr); 
+        if (price <= 0) throw std::runtime_error("Price must be positive.");
+    } catch (...) { 
+        UI::printError("Invalid price. Please enter a positive number."); 
+        return; 
+    }
 
     Wallet& wallet = userManager.getWallet(currentUser);
     std::string base = product.substr(0, product.find('/'));
@@ -256,29 +291,43 @@ void Menu::handleMakeOffer() {
     if (wallet.removeCurrency(base, amount)) {
         transactionManager.saveTransaction(Transaction(CSVReader::getCurrentTimestamp(), currentUser, TransactionType::ask, product, amount, price, wallet.getBalance(base)));
         userManager.saveWallets();
-        std::cout << "\n[SUCCESS] Offer placed for " << amount << " " << base << " at " << price << ".\n";
+        UI::printSuccess("Offer placed for " + std::to_string(amount) + " " + base + " at " + std::to_string(price) + ".");
     } else {
-        std::cout << "\n[ERROR] Insufficient balance. You need " << amount << " " << base << " but only have " << wallet.getBalance(base) << ".\n";
+        UI::printError("Insufficient balance. You need " + std::to_string(amount) + " " + base + " but only have " + std::to_string(wallet.getBalance(base)) + ".");
     }
 }
 
 void Menu::handleMakeBid() {
     std::string product = promptProductSelection();
     if (product == "") {
-        std::cout << "\n[!] Invalid product selection.\n";
+        UI::printWarning("Invalid product selection.");
         return;
     }
 
     double amount, price;
+    // Step 5.2: Validate numeric amount using try/catch and stod
     std::cout << "Enter amount to buy: ";
     std::string amountStr;
     std::getline(std::cin, amountStr);
-    try { amount = std::stod(amountStr); } catch (...) { std::cout << "[!] Invalid amount.\n"; return; }
+    try { 
+        amount = std::stod(amountStr); 
+        if (amount <= 0) throw std::runtime_error("Amount must be positive.");
+    } catch (...) { 
+        UI::printError("Invalid amount. Please enter a positive number."); 
+        return; 
+    }
 
+    // Step 5.2: Validate numeric price using try/catch and stod
     std::cout << "Enter price: ";
     std::string priceStr;
     std::getline(std::cin, priceStr);
-    try { price = std::stod(priceStr); } catch (...) { std::cout << "[!] Invalid price.\n"; return; }
+    try { 
+        price = std::stod(priceStr); 
+        if (price <= 0) throw std::runtime_error("Price must be positive.");
+    } catch (...) { 
+        UI::printError("Invalid price. Please enter a positive number."); 
+        return; 
+    }
 
     Wallet& wallet = userManager.getWallet(currentUser);
     std::string quote = product.substr(product.find('/') + 1);
@@ -287,9 +336,9 @@ void Menu::handleMakeBid() {
     if (wallet.removeCurrency(quote, totalCost)) {
         transactionManager.saveTransaction(Transaction(CSVReader::getCurrentTimestamp(), currentUser, TransactionType::bid, product, amount, price, wallet.getBalance(quote)));
         userManager.saveWallets();
-        std::cout << "\n[SUCCESS] Bid placed for " << amount << " " << product.substr(0, product.find('/')) << " at total cost of " << totalCost << " " << quote << ".\n";
+        UI::printSuccess("Bid placed for " + std::to_string(amount) + " " + product.substr(0, product.find('/')) + " at total cost of " + std::to_string(totalCost) + " " + quote + ".");
     } else {
-        std::cout << "\n[ERROR] Insufficient balance. Total cost is " << totalCost << " " << quote << " but you only have " << wallet.getBalance(quote) << ".\n";
+        UI::printError("Insufficient balance. Total cost is " + std::to_string(totalCost) + " " + quote + " but you only have " + std::to_string(wallet.getBalance(quote)) + ".");
     }
 }
 
@@ -302,34 +351,41 @@ void Menu::handleContinue() {
     std::cin.get();
 }
 
+#include "MarketOrder.h"
+
 void Menu::handleMarketAnalysis() {
     std::string product = promptProductSelection();
-    if (product == "") {
+    if (product == "" || !isValidProduct(product)) {
         UI::printWarning("Invalid product selection.");
         return;
     }
 
-    
     UI::printHeader("MARKET ANALYSIS - " + product);
+    // Task 1: Refined timeframe selection
     std::cout << "Select timeframe:\n";
-    std::cout << " " << UI::BOLD << UI::YELLOW << "1:" << UI::RESET << " Yearly\n";
-    std::cout << " " << UI::BOLD << UI::YELLOW << "2:" << UI::RESET << " Monthly\n";
-    std::cout << " " << UI::BOLD << UI::YELLOW << "3:" << UI::RESET << " Daily\n";
+    std::cout << "1. Daily\n";
+    std::cout << "2. Monthly\n";
+    std::cout << "3. Yearly\n";
     std::cout << "Choice: ";
-    int tfChoice = getUserOption();
-    std::string timeframe = "yearly";
-    if (tfChoice == 2) timeframe = "monthly";
-    else if (tfChoice == 3) timeframe = "daily";
-    else if (tfChoice != 1) {
+    
+    std::string tfInput;
+    std::getline(std::cin, tfInput);
+    
+    std::string timeframe = "";
+    if (tfInput == "1" || tfInput == "daily") timeframe = "daily";
+    else if (tfInput == "2" || tfInput == "monthly") timeframe = "monthly";
+    else if (tfInput == "3" || tfInput == "yearly") timeframe = "yearly";
+    else {
         UI::printWarning("Invalid choice, defaulting to Yearly.");
+        timeframe = "yearly";
     }
 
-    std::string startDate, endDate;
-    std::cout << "\nEnter start date (YYYY-MM-DD HH:MM:SS) or press enter to skip: ";
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::getline(std::cin, startDate);
-    std::cout << "Enter end date (YYYY-MM-DD HH:MM:SS) or press enter to skip: ";
-    std::getline(std::cin, endDate);
+    // Load all market orders
+    std::vector<MarketOrder> orders = CSVReader::readMarketOrders("data/20200317.csv");
+
+    // Compute candlesticks using RMarketAnalysis
+    std::vector<Candlestick> asks = RMarketAnalysis::computeCandlesticks(orders, product, "ask", timeframe);
+    std::vector<Candlestick> bids = RMarketAnalysis::computeCandlesticks(orders, product, "bid", timeframe);
 
     auto printTable = [](std::string title, const std::vector<Candlestick>& candles, std::string color) {
         std::cout << "\n" << UI::BOLD << color << "--- " << title << " ---" << UI::RESET << "\n";
@@ -337,14 +393,15 @@ void Menu::handleMarketAnalysis() {
             std::cout << "No data available for this selection.\n";
             return;
         }
-        std::cout << std::left << std::setw(20) << "Time" 
+        // Task 1: Refined table headers
+        std::cout << std::left << std::setw(20) << "Date" 
                   << std::setw(12) << "Open" 
                   << std::setw(12) << "High" 
                   << std::setw(12) << "Low" 
                   << std::setw(12) << "Close" << "\n";
         std::cout << std::string(68, '-') << "\n";
         for (const auto& c : candles) {
-            std::cout << std::left << std::setw(20) << c.timestamp 
+            std::cout << std::left << std::setw(20) << c.date 
                       << std::fixed << std::setprecision(4)
                       << std::setw(12) << c.open 
                       << std::setw(12) << c.high 
@@ -353,14 +410,8 @@ void Menu::handleMarketAnalysis() {
         }
     };
 
-    std::vector<Order> askOrders = tradeSimulator.getMarketData().getOrders(product, "ask");
-    std::vector<Order> bidOrders = tradeSimulator.getMarketData().getOrders(product, "bid");
-
-    std::vector<Candlestick> asks = MarketData::computeCandlesticks(askOrders, timeframe, startDate, endDate);
-    std::vector<Candlestick> bids = MarketData::computeCandlesticks(bidOrders, timeframe, startDate, endDate);
-
-    printTable("ASKS (SELL ORDERS)", asks, UI::RED);
-    printTable("BIDS (BUY ORDERS)", bids, UI::GREEN);
+    printTable("Asks Candlestick Summary", asks, UI::RED);
+    printTable("Bids Candlestick Summary", bids, UI::GREEN);
 
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
@@ -368,28 +419,27 @@ void Menu::handleMarketAnalysis() {
 void Menu::handleWallet() {
     UI::printHeader("WALLET BALANCE");
     Wallet& wallet = userManager.getWallet(currentUser);
-    std::cout << wallet.toString() << "\n";
+    std::cout << "Current Balance:\n" << wallet.toString() << "\n";
     
     UI::printHeader("LAST 5 TRANSACTIONS");
     std::vector<Transaction> recent = transactionManager.getRecentTransactions(currentUser, 5);
     if (recent.empty()) {
         std::cout << " No transactions found.\n";
     } else {
-        std::cout << std::left << std::setw(20) << "Timestamp" 
+        // Task 3: Refined table headers
+        std::cout << std::left << std::setw(20) << "Date & Time" 
                   << std::setw(12) << "Type" 
                   << std::setw(15) << "Product" 
                   << std::setw(10) << "Amount" 
-                  << std::setw(10) << "Price" 
-                  << std::setw(10) << "Balance" << "\n";
-        std::cout << std::string(77, '-') << "\n";
+                  << std::setw(15) << "Balance After" << "\n";
+        std::cout << std::string(72, '-') << "\n";
         for (const auto& t : recent) {
             std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
             std::cout << std::left << std::setw(20) << t.timestamp 
                       << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
                       << std::setw(15) << t.product 
                       << std::setw(10) << t.amount 
-                      << std::setw(10) << t.price 
-                      << std::setw(10) << t.balanceAfter << "\n";
+                      << std::setw(15) << t.balanceAfter << "\n";
         }
     }
     
@@ -407,13 +457,13 @@ void Menu::handleTransactions() {
     if (ts.empty()) {
         std::cout << " No transactions found.\n";
     } else {
-        std::cout << std::left << std::setw(20) << "Timestamp" 
+        // Task 3: Refined table headers
+        std::cout << std::left << std::setw(20) << "Date & Time" 
                   << std::setw(12) << "Type" 
                   << std::setw(15) << "Product" 
                   << std::setw(10) << "Amount" 
-                  << std::setw(10) << "Price" 
-                  << std::setw(10) << "Balance" << "\n";
-        std::cout << std::string(77, '-') << "\n";
+                  << std::setw(15) << "Balance After" << "\n";
+        std::cout << std::string(72, '-') << "\n";
         for (const auto& t : ts) {
             if (product != "" && t.product != product) continue;
             std::string typeColor = (t.type == TransactionType::deposit || t.type == TransactionType::bid) ? UI::GREEN : UI::RED;
@@ -421,8 +471,7 @@ void Menu::handleTransactions() {
                       << typeColor << std::setw(12) << Transaction::typeToString(t.type) << UI::RESET
                       << std::setw(15) << t.product 
                       << std::setw(10) << t.amount 
-                      << std::setw(10) << t.price 
-                      << std::setw(10) << t.balanceAfter << "\n";
+                      << std::setw(15) << t.balanceAfter << "\n";
         }
     }
     std::cout << "\nPress Enter to continue...";
@@ -431,9 +480,16 @@ void Menu::handleTransactions() {
 
 void Menu::handleDeposit() {
     UI::printHeader("DEPOSIT FUNDS");
+    // Step 5.2: Validate currency type
     std::cout << "Enter currency (e.g., USDT): ";
     std::string type;
     std::getline(std::cin, type);
+    if (type.empty()) {
+        UI::printError("Currency type cannot be empty.");
+        return;
+    }
+
+    // Step 5.2: Validate numeric amount using try/catch and stod
     std::cout << "Enter amount: ";
     std::string amountStr;
     std::getline(std::cin, amountStr);
@@ -452,7 +508,7 @@ void Menu::handleDeposit() {
         
         UI::printSuccess("Deposit successful!");
     } catch (const std::exception& e) {
-        UI::printError(e.what());
+        UI::printError("Invalid amount. Please enter a positive number.");
     }
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
@@ -460,9 +516,16 @@ void Menu::handleDeposit() {
 
 void Menu::handleWithdraw() {
     UI::printHeader("WITHDRAW FUNDS");
+    // Step 5.2: Validate currency type
     std::cout << "Enter currency (e.g., USDT): ";
     std::string type;
     std::getline(std::cin, type);
+    if (type.empty()) {
+        UI::printError("Currency type cannot be empty.");
+        return;
+    }
+
+    // Step 5.2: Validate numeric amount using try/catch and stod
     std::cout << "Enter amount: ";
     std::string amountStr;
     std::getline(std::cin, amountStr);
@@ -482,7 +545,7 @@ void Menu::handleWithdraw() {
             UI::printError("Insufficient balance.");
         }
     } catch (const std::exception& e) {
-        UI::printError(e.what());
+        UI::printError("Invalid amount. Please enter a positive number.");
     }
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
@@ -490,19 +553,78 @@ void Menu::handleWithdraw() {
 
 void Menu::handleStats() {
     UI::printHeader("USER STATISTICS");
-    std::cout << "Enter timeframe (YYYY-MM-DD or leave empty for all): ";
-    std::string timeframe;
-    std::getline(std::cin, timeframe);
+    
+    // Task 3: Refined stats output
+    std::cout << "Enter date (YYYY-MM-DD or leave empty for all): ";
+    std::string dateStr;
+    std::getline(std::cin, dateStr);
+    
+    if (!dateStr.empty() && (dateStr.length() < 4 || dateStr.length() > 10)) {
+        UI::printWarning("Invalid date format. Showing all-time stats.");
+        dateStr = "";
+    }
     
     std::vector<Transaction> all = transactionManager.getTransactions(currentUser);
-    TradeSimulator::Stats stats = tradeSimulator.getStats(currentUser, all, timeframe);
+    TradeSimulator::Stats stats = tradeSimulator.getStats(currentUser, all, dateStr);
     
-    std::cout << " Statistics for " << (timeframe == "" ? "All Time" : timeframe) << ":\n";
-    std::cout << " ------------------------------------\n";
-    std::cout << " Total Asks: " << UI::BOLD << UI::YELLOW << stats.asks << UI::RESET << "\n";
-    std::cout << " Total Bids: " << UI::BOLD << UI::GREEN << stats.bids << UI::RESET << "\n";
-    std::cout << " Total Spent: " << UI::BOLD << UI::CYAN << stats.totalSpent << " USDT" << UI::RESET << "\n";
+    std::cout << "\nUser Activity Summary (" << (dateStr == "" ? "All Time" : dateStr) << "):\n";
+    std::cout << "------------------------------------\n";
+    std::cout << "Total Asks: " << UI::BOLD << UI::YELLOW << stats.totalAsks << UI::RESET << "\n";
+    std::cout << "Total Bids: " << UI::BOLD << UI::GREEN << stats.totalBids << UI::RESET << "\n";
+    std::cout << "\nPer Product Breakdown:\n";
+    for (const auto& pair : stats.productBreakdown) {
+        std::cout << UI::BOLD << pair.first << ":" << UI::RESET << "\n";
+        std::cout << "  Asks: " << pair.second.asks << "\n";
+        std::cout << "  Bids: " << pair.second.bids << "\n";
+    }
+    std::cout << "\nTotal Money Spent (Monthly): " << UI::BOLD << UI::CYAN << stats.totalSpent << " USDT" << UI::RESET << "\n";
     
     std::cout << "\nPress Enter to continue...";
     std::cin.get();
+}
+
+void Menu::handleSimulateTrading() {
+    UI::printHeader("SIMULATING TRADING ACTIVITIES");
+    // Task 4: Refined simulation output
+    std::cout << "Simulating trades for all products...\n\n";
+    std::vector<TradeSimulator::SimulationResult> results = tradeSimulator.simulateTradingActivities(currentUser, userManager, transactionManager);
+    
+    for (const auto& res : results) {
+        std::cout << UI::BOLD << res.product << ":" << UI::RESET << "\n";
+        std::cout << "  " << res.bidsCreated << " Bids created\n";
+        std::cout << "  " << res.asksCreated << " Asks created\n\n";
+    }
+    
+    UI::printSuccess("Trades saved successfully.");
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+// Step 5.2: Validation helpers implementation
+bool Menu::isValidProduct(const std::string& product) {
+    std::vector<std::string> products = tradeSimulator.getMarketData().getProducts();
+    for (const std::string& p : products) {
+        if (p == product) return true;
+    }
+    return false;
+}
+
+bool Menu::isValidTimeframe(const std::string& timeframe) {
+    // Step 5.2: Validate timeframe (D/M/Y)
+    return (timeframe == "daily" || timeframe == "monthly" || timeframe == "yearly" || 
+            timeframe == "D" || timeframe == "M" || timeframe == "Y");
+}
+
+bool Menu::isValidDate(const std::string& date) {
+    // Step 5.2: Validate date format (basic check: YYYY-MM-DD HH:MM:SS)
+    // Format: 0123456789012345678
+    //         YYYY-MM-DD HH:MM:SS
+    if (date.length() != 19) return false;
+    if (date[4] != '-' || date[7] != '-' || date[10] != ' ' || date[13] != ':' || date[16] != ':') return false;
+    
+    for (int i = 0; i < 19; ++i) {
+        if (i == 4 || i == 7 || i == 10 || i == 13 || i == 16) continue;
+        if (!isdigit(date[i])) return false;
+    }
+    return true;
 }

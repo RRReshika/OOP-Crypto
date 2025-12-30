@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "RCandlestick.h"
+#include "Candlestick.h"
 
 struct Order {
     std::string timestamp;
@@ -20,6 +20,7 @@ public:
     std::vector<Candlestick> generateCandlesticks(std::string product, std::string timeframe, std::string orderType);
     static std::vector<Candlestick> computeCandlesticks(const std::vector<Order>& orders, std::string timeframe, std::string startDate = "", std::string endDate = "");
     static std::string getBucketKey(std::string timestamp, std::string timeframe);
+    double getMostRecentClosePrice(std::string product);
 
 private:
     std::vector<Order> orders;

@@ -3,9 +3,9 @@
 
 class Candlestick {
 public:
-    Candlestick(std::string timestamp, double open, double high, double low, double close);
+    Candlestick(std::string date, double open, double high, double low, double close);
 
-    std::string timestamp;
+    std::string date;
     double open;
     double high;
     double low;
