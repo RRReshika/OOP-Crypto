@@ -3,16 +3,25 @@
 #include <map>
 #include <vector>
 
-class Wallet {
+// tracks crypto balances
+class rWlt {
 public:
-    Wallet();
-    void insertCurrency(std::string type, double amount);
-    bool removeCurrency(std::string type, double amount);
-    bool containsCurrency(std::string type, double amount);
-    void deposit(std::string type, double amount);
-    bool withdraw(std::string type, double amount);
-    double getBalance(std::string type);
-    std::string toString();
+    rWlt();
+    // add crypto
+    void rInsCur(std::string rTyp, double rAmt);
+    // remove crypto
+    bool rRemCur(std::string rTyp, double rAmt);
+    // check if enough
+    bool rHasCur(std::string rTyp, double rAmt);
+    // deposit
+    void rDep(std::string rTyp, double rAmt);
+    // withdraw
+    bool rWth(std::string rTyp, double rAmt);
+    // get balance
+    double rGetBal(std::string rTyp);
+    // show balances
+    std::string r2Str();
 
-    std::map<std::string, double> currencies;
+    // currency map
+    std::map<std::string, double> rCurs;
 };

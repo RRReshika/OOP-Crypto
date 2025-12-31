@@ -1,25 +1,28 @@
 #pragma once
 #include <string>
 
-enum class TransactionType {
+// wallet transaction types
+enum class rTransTyp {
     deposit,
     withdrawal,
-    ask,
-    bid
+    ask, // sell
+    bid  // buy
 };
 
-class Transaction {
+// stores single transaction info
+class rTrans {
 public:
-    Transaction(std::string timestamp, std::string username, TransactionType type, std::string product, double amount, double price, double balanceAfter);
+    rTrans(std::string rTime, std::string rUsrNm, rTransTyp rTyp, std::string rProd, double rAmt, double rPrc, double rBalAft);
 
-    std::string timestamp;
-    std::string username;
-    TransactionType type;
-    std::string product;
-    double amount;
-    double price;
-    double balanceAfter;
+    std::string rTime;   // when
+    std::string rUsrNm;  // who
+    rTransTyp rTyp;      // what
+    std::string rProd;   // which crypto
+    double rAmt;         // how much
+    double rPrc;         // price
+    double rBalAft;      // balance after
 
-    static std::string typeToString(TransactionType type);
-    static TransactionType stringToType(std::string typeStr);
+    // enum/string conversion
+    static std::string rTyp2Str(rTransTyp rTyp);
+    static rTransTyp rStr2Typ(std::string rStr);
 };

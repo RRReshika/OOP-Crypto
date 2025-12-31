@@ -1,13 +1,14 @@
 #pragma once
 #include <string>
 
-class User {
+// user info
+class rUsr {
 public:
-    User(std::string username, std::string customUsername, std::string fullName, std::string email, std::string passwordHash);
+    rUsr(std::string rUsrNm, std::string rCstNm, std::string rFullNm, std::string rEml, std::string rPwdHsh);
 
-    std::string username; // 10-digit ID
-    std::string customUsername;
-    std::string fullName;
-    std::string email;
-    std::string passwordHash;
+    std::string rUsrNm; // 10-digit ID
+    std::string rCstNm; // custom name
+    std::string rFullNm;
+    std::string rEml;
+    std::string rPwdHsh; // hash
 };

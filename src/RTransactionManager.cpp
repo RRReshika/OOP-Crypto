@@ -3,53 +3,56 @@
 #include <fstream>
 #include <iostream>
 
-TransactionManager::TransactionManager(std::string filename) : filename(filename) {
-    loadTransactions();
+rTransMgr::rTransMgr(std::string rFn) : rFn(rFn) {
+    rLdTrans();
 }
 
-void TransactionManager::saveTransaction(Transaction transaction) {
-    transactions.push_back(transaction);
-    CSVReader::appendRow(filename, {
-        transaction.timestamp,
-        transaction.username,
-        Transaction::typeToString(transaction.type),
-        transaction.product,
-        std::to_string(transaction.amount),
-        std::to_string(transaction.price),
-        std::to_string(transaction.balanceAfter)
+void rTransMgr::rSavTrans(rTrans rT) {
+    rTranss.push_back(rT);
+    // write to CSV
+    rCSV::rAppRow(rFn, {
+        rT.rTime,
+        rT.rUsrNm,
+        rTrans::rTyp2Str(rT.rTyp),
+        rT.rProd,
+        std::to_string(rT.rAmt),
+        std::to_string(rT.rPrc),
+        std::to_string(rT.rBalAft)
     });
 }
 
-std::vector<Transaction> TransactionManager::getTransactions(std::string username) {
-    std::vector<Transaction> userTransactions;
-    for (const auto& t : transactions) {
-        if (t.username == username) {
-            userTransactions.push_back(t);
+std::vector<rTrans> rTransMgr::rGetTrans(std::string rUsrNm) {
+    std::vector<rTrans> rUT;
+    for (const auto& rT : rTranss) {
+        if (rT.rUsrNm == rUsrNm) {
+            rUT.push_back(rT);
         }
     }
-    return userTransactions;
+    return rUT;
 }
 
-std::vector<Transaction> TransactionManager::getRecentTransactions(std::string username, int count, std::string product) {
-    std::vector<Transaction> filtered;
-    for (auto it = transactions.rbegin(); it != transactions.rend(); ++it) {
-        if (it->username == username) {
-            if (product == "" || it->product == product) {
-                filtered.push_back(*it);
-                if (filtered.size() >= count) break;
+std::vector<rTrans> rTransMgr::rRecTrans(std::string rUsrNm, int rCnt, std::string rProd) {
+    std::vector<rTrans> rFltrd;
+    // newest first
+    for (auto it = rTranss.rbegin(); it != rTranss.rend(); ++it) {
+        if (it->rUsrNm == rUsrNm) {
+            if (rProd == "" || it->rProd == rProd) {
+                rFltrd.push_back(*it);
+                if (rFltrd.size() >= rCnt) break;
             }
         }
     }
-    return filtered;
+    return rFltrd;
 }
 
-void TransactionManager::loadTransactions() {
-    std::vector<std::vector<std::string>> rows = CSVReader::readCSV(filename);
-    for (const auto& tokens : rows) {
-        if (tokens.size() == 7) {
-            transactions.push_back(Transaction(
-                tokens[0], tokens[1], Transaction::stringToType(tokens[2]),
-                tokens[3], std::stod(tokens[4]), std::stod(tokens[5]), std::stod(tokens[6])
+void rTransMgr::rLdTrans() {
+    // read CSV
+    std::vector<std::vector<std::string>> rRws = rCSV::rRdCSV(rFn);
+    for (const auto& rTks : rRws) {
+        if (rTks.size() == 7) {
+            rTranss.push_back(rTrans(
+                rTks[0], rTks[1], rTrans::rStr2Typ(rTks[2]),
+                rTks[3], std::stod(rTks[4]), std::stod(rTks[5]), std::stod(rTks[6])
             ));
         }
     }

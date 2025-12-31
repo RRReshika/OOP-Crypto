@@ -2,18 +2,21 @@
 #include <vector>
 #include <string>
 #include <map>
-#include "MarketOrder.h"
-#include "Candlestick.h"
+#include "RMarketOrder.h"
+#include "RCandlestick.h"
 
-class RMarketAnalysis {
+// turns orders into candlestick data
+class rMktAnls {
 public:
-    static std::vector<Candlestick> computeCandlesticks(
-        const std::vector<MarketOrder>& orders,
-        std::string product,
-        std::string orderType,
-        std::string timeframe
+    // main function for candle math
+    static std::vector<rCandle> rCompCndl(
+        const std::vector<rMktOrd>& rOrds,
+        std::string rProd,
+        std::string rType,
+        std::string rTf
     );
 
 private:
-    static std::string truncateTimestamp(std::string timestamp, std::string timeframe);
+    // helper to chop off time part of timestamp
+    static std::string rTrunTime(std::string rTime, std::string rTf);
 };

@@ -5,25 +5,35 @@
 #include "RUser.h"
 #include "RWallet.h"
 
-class UserManager {
+// manages users, logins, and wallets
+class rUsrMgr {
 public:
-    UserManager(std::string usersFile, std::string walletsFile);
-    bool registerUser(std::string fullName, std::string email, std::string password, std::string& outUsername, std::string customUsername = "");
-    bool loginUser(std::string username, std::string password);
-    std::string findUsername(std::string fullName, std::string email);
-    bool resetPassword(std::string fullName, std::string email, std::string newPassword);
-    Wallet& getWallet(std::string username);
-    void saveWallets();
+    rUsrMgr(std::string rUsrF, std::string rWltF);
+    // create new account
+    bool rRegUsr(std::string rFullNm, std::string rEml, std::string rPwd, std::string& rUsrNm, std::string rCstNm = "");
+    // check login
+    bool rLgnUsr(std::string rUsrNm, std::string rPwd);
+    // find username
+    std::string rFndUsr(std::string rFullNm, std::string rEml);
+    // reset password
+    bool rRstPwd(std::string rFullNm, std::string rEml, std::string rNPwd);
+    // get user wallet
+    rWlt& rGetWlt(std::string rUsrNm);
+    // save wallets to CSV
+    void rSavWlts();
 
 private:
-    std::string usersFile;
-    std::string walletsFile;
-    std::vector<User> users;
-    std::map<std::string, Wallet> wallets;
+    std::string rUsrF;
+    std::string rWltF;
+    std::vector<rUsr> rUsrs; // all users
+    std::map<std::string, rWlt> rWlts; // user wallets
 
-    void loadUsers();
-    void loadWallets();
-    void saveUsers();
-    std::string hashPassword(std::string password);
-    std::string generateUniqueUsername();
+    // internal helpers
+    void rLdUsrs();
+    void rLdWlts();
+    void rSavUsrs();
+    // simple hash
+    std::string rHshPwd(std::string rPwd);
+    // random 10-digit ID
+    std::string rGenUsr();
 };

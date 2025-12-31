@@ -5,38 +5,46 @@
 #include "RMarketData.h"
 #include "RTransaction.h"
 #include "RWallet.h"
-#include "Candlestick.h"
+#include "RCandlestick.h"
 
-class UserManager;
-class TransactionManager;
+class rUsrMgr;
+class rTransMgr;
 
-class TradeSimulator {
+// trading logic and simulation
+class rSim {
 public:
-    TradeSimulator(MarketData& marketData);
-    void generateOrders();
-    std::vector<Order> getLatestOrders();
-    MarketData& getMarketData();
+    rSim(rMktDat& rMkt);
+    // random orders for market movement
+    void rGenOrds();
+    // get generated orders
+    std::vector<rOrd> rGetOrds();
+    // access market data
+    rMktDat& rGetMkt();
     
-    struct ProductStats {
-        int asks = 0;
-        int bids = 0;
+    // user stats
+    struct rPrdStats {
+        int rAsks = 0;
+        int rBids = 0;
     };
-    struct Stats {
-        int totalAsks = 0;
-        int totalBids = 0;
-        double totalSpent = 0.0;
-        std::map<std::string, ProductStats> productBreakdown;
+    struct rStats {
+        int rTAsks = 0;
+        int rTBids = 0;
+        double rTSpnt = 0.0;
+        std::map<std::string, rPrdStats> rPrdBrk;
     };
-    Stats getStats(std::string username, std::vector<Transaction>& transactions, std::string timeframe = "");
+    // calculate user stats
+    rStats rGetStats(std::string rUsrNm, std::vector<rTrans>& rTranss, std::string rTf = "");
     
-    struct SimulationResult {
-        std::string product;
-        int bidsCreated;
-        int asksCreated;
+    // simulation results
+    struct rSimRes {
+        std::string rProd;
+        int rBids;
+        int rAsks;
     };
-    std::vector<SimulationResult> simulateTradingActivities(std::string username, class UserManager& userManager, class TransactionManager& transactionManager);
+    // Task 4: automated trading
+    std::vector<rSimRes> rSimTrds(std::string rUsrNm, class rUsrMgr& rUsrMgr, class rTransMgr& rTransMgr);
 
 private:
-    MarketData& marketData;
-    std::vector<Order> latestOrders;
+    rMktDat& rMkt;
+    std::vector<rOrd> rOrds;
 };

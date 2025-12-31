@@ -6,101 +6,101 @@
 #include "RTransactionManager.h"
 #include "RCSVReader.h"
 
-TradeSimulator::TradeSimulator(MarketData& marketData) : marketData(marketData) {
-    generateOrders();
+rSim::rSim(rMktDat& rMkt) : rMkt(rMkt) {
+    rGenOrds();
 }
 
-void TradeSimulator::generateOrders() {
-    // For simplicity, just pick some orders from market data
-    std::vector<Order> allOrders = marketData.getOrders();
-    if (allOrders.empty()) return;
+void rSim::rGenOrds() {
+    // pick 5 random orders
+    std::vector<rOrd> rAll = rMkt.rGetOrds();
+    if (rAll.empty()) return;
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(allOrders.begin(), allOrders.end(), g);
+    static std::random_device rRd;
+    static std::mt19937 rG(rRd());
+    std::shuffle(rAll.begin(), rAll.end(), rG);
 
-    latestOrders.clear();
-    size_t numToPick = std::min(allOrders.size(), (size_t)5);
-    for (size_t i = 0; i < numToPick; ++i) {
-        latestOrders.push_back(allOrders[i]);
+    rOrds.clear();
+    size_t rPick = std::min(rAll.size(), (size_t)5);
+    for (size_t i = 0; i < rPick; ++i) {
+        rOrds.push_back(rAll[i]);
     }
 }
 
-std::vector<Order> TradeSimulator::getLatestOrders() {
-    return latestOrders;
+std::vector<rOrd> rSim::rGetOrds() {
+    return rOrds;
 }
 
-MarketData& TradeSimulator::getMarketData() {
-    return marketData;
+rMktDat& rSim::rGetMkt() {
+    return rMkt;
 }
 
-TradeSimulator::Stats TradeSimulator::getStats(std::string username, std::vector<Transaction>& transactions, std::string timeframe) {
-    Stats s;
-    for (const auto& t : transactions) {
-        if (t.username == username) {
-            if (timeframe != "" && t.timestamp.find(timeframe) == std::string::npos) continue;
+rSim::rStats rSim::rGetStats(std::string rUsrNm, std::vector<rTrans>& rTranss, std::string rTf) {
+    rStats rS;
+    for (const auto& rT : rTranss) {
+        if (rT.rUsrNm == rUsrNm) {
+            if (rTf != "" && rT.rTime.find(rTf) == std::string::npos) continue;
             
-            if (t.type == TransactionType::ask) {
-                s.totalAsks++;
-                s.productBreakdown[t.product].asks++;
-            } else if (t.type == TransactionType::bid) {
-                s.totalBids++;
-                s.productBreakdown[t.product].bids++;
-                s.totalSpent += t.amount * t.price;
+            if (rT.rTyp == rTransTyp::ask) {
+                rS.rTAsks++;
+                rS.rPrdBrk[rT.rProd].rAsks++;
+            } else if (rT.rTyp == rTransTyp::bid) {
+                rS.rTBids++;
+                rS.rPrdBrk[rT.rProd].rBids++;
+                rS.rTSpnt += rT.rAmt * rT.rPrc;
             }
         }
     }
-    return s;
+    return rS;
 }
 
-std::vector<TradeSimulator::SimulationResult> TradeSimulator::simulateTradingActivities(std::string username, UserManager& userManager, TransactionManager& transactionManager) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> spreadDis(0.001, 0.01);
-    std::uniform_real_distribution<double> amountDis(0.1, 2.0);
+std::vector<rSim::rSimRes> rSim::rSimTrds(std::string rUsrNm, rUsrMgr& rUsrMgr, rTransMgr& rTransMgr) {
+    static std::random_device rRd;
+    static std::mt19937 rGen(rRd());
+    std::uniform_real_distribution<double> rSprdD(0.001, 0.01);
+    std::uniform_real_distribution<double> rAmtD(0.1, 2.0);
 
-    std::vector<std::string> products = marketData.getProducts();
-    Wallet& wallet = userManager.getWallet(username);
-    std::vector<SimulationResult> results;
+    std::vector<std::string> rPrds = rMkt.rGetProds();
+    rWlt& rW = rUsrMgr.rGetWlt(rUsrNm);
+    std::vector<rSimRes> rRes;
 
-    for (const auto& product : products) {
-        double closePrice = marketData.getMostRecentClosePrice(product);
-        if (closePrice <= 0) continue;
+    for (const auto& rP : rPrds) {
+        double rClP = rMkt.rLastPrc(rP);
+        if (rClP <= 0) continue;
 
-        std::string base = product.substr(0, product.find('/'));
-        std::string quote = product.substr(product.find('/') + 1);
+        std::string rBase = rP.substr(0, rP.find('/'));
+        std::string rQuote = rP.substr(rP.find('/') + 1);
 
-        int asksCreated = 0;
-        int bidsCreated = 0;
+        int rAsksC = 0;
+        int rBidsC = 0;
 
         for (int i = 0; i < 5; ++i) {
-            // Simulate Ask (Sell)
-            double askSpread = spreadDis(gen);
-            double askPrice = closePrice * (1.0 + askSpread);
-            double askAmount = amountDis(gen);
+            // sell
+            double rASprd = rSprdD(rGen);
+            double rAPrc = rClP * (1.0 + rASprd);
+            double rAAmt = rAmtD(rGen);
             
-            if (wallet.removeCurrency(base, askAmount)) {
-                transactionManager.saveTransaction(Transaction(
-                    CSVReader::getCurrentTimestamp(), username, TransactionType::ask, product, askAmount, askPrice, wallet.getBalance(base)
+            if (rW.rRemCur(rBase, rAAmt)) {
+                rTransMgr.rSavTrans(rTrans(
+                    rCSV::rTime(), rUsrNm, rTransTyp::ask, rP, rAAmt, rAPrc, rW.rGetBal(rBase)
                 ));
-                asksCreated++;
+                rAsksC++;
             }
 
-            // Simulate Bid (Buy)
-            double bidSpread = spreadDis(gen);
-            double bidPrice = closePrice * (1.0 - bidSpread);
-            double bidAmount = amountDis(gen);
-            double totalCost = bidAmount * bidPrice;
+            // buy
+            double rBSprd = rSprdD(rGen);
+            double rBPrc = rClP * (1.0 - rBSprd);
+            double rBAmt = rAmtD(rGen);
+            double rCost = rBAmt * rBPrc;
 
-            if (wallet.removeCurrency(quote, totalCost)) {
-                transactionManager.saveTransaction(Transaction(
-                    CSVReader::getCurrentTimestamp(), username, TransactionType::bid, product, bidAmount, bidPrice, wallet.getBalance(quote)
+            if (rW.rRemCur(rQuote, rCost)) {
+                rTransMgr.rSavTrans(rTrans(
+                    rCSV::rTime(), rUsrNm, rTransTyp::bid, rP, rBAmt, rBPrc, rW.rGetBal(rQuote)
                 ));
-                bidsCreated++;
+                rBidsC++;
             }
         }
-        results.push_back({product, bidsCreated, asksCreated});
+        rRes.push_back({rP, rBidsC, rAsksC});
     }
-    userManager.saveWallets();
-    return results;
+    rUsrMgr.rSavWlts();
+    return rRes;
 }

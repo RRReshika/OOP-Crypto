@@ -4,92 +4,89 @@
 #include <fstream>
 #include <iostream>
 
-CSVReader::CSVReader() {}
+rCSV::rCSV() {}
 
-std::vector<std::vector<std::string>> CSVReader::readCSV(std::string filename) {
-    std::vector<std::vector<std::string>> rows;
-    std::ifstream file(filename);
-    std::string line;
-    if (file.is_open()) {
-        while (std::getline(file, line)) {
-            if (line.empty()) continue;
-            rows.push_back(split(line, ','));
+// generic CSV reader
+std::vector<std::vector<std::string>> rCSV::rRdCSV(std::string rFn) {
+    std::vector<std::vector<std::string>> rRws;
+    std::ifstream rF(rFn);
+    std::string rLn;
+    if (rF.is_open()) {
+        while (std::getline(rF, rLn)) {
+            if (rLn.empty()) continue;
+            rRws.push_back(rSpl(rLn, ','));
         }
-        file.close();
+        rF.close();
     }
-    return rows;
+    return rRws;
 }
 
-std::vector<MarketOrder> CSVReader::readMarketOrders(std::string filename) {
-    std::vector<MarketOrder> orders;
-    std::ifstream file(filename);
-    std::string line;
-    if (file.is_open()) {
-        while (std::getline(file, line)) {
-            if (line.empty()) continue;
-            std::vector<std::string> tokens = split(line, ',');
-            if (tokens.size() == 5) {
+// specifically for market data
+std::vector<rMktOrd> rCSV::rRdMkt(std::string rFn) {
+    std::vector<rMktOrd> rOrds;
+    std::ifstream rF(rFn);
+    std::string rLn;
+    if (rF.is_open()) {
+        while (std::getline(rF, rLn)) {
+            if (rLn.empty()) continue;
+            std::vector<std::string> rTks = rSpl(rLn, ',');
+            if (rTks.size() == 5) {
                 try {
-                    orders.push_back(MarketOrder(
-                        tokens[0], // timestamp
-                        tokens[1], // product
-                        tokens[2], // orderType
-                        std::stod(tokens[3]), // price
-                        std::stod(tokens[4])  // amount
+                    rOrds.push_back(rMktOrd(
+                        rTks[0], rTks[1], rTks[2], std::stod(rTks[3]), std::stod(rTks[4])
                     ));
-                } catch (...) {
-                    // Skip invalid rows
-                }
+                } catch (...) {}
             }
         }
-        file.close();
+        rF.close();
     }
-    return orders;
+    return rOrds;
 }
 
-void CSVReader::appendRow(std::string filename, std::vector<std::string> row) {
-    std::ofstream file(filename, std::ios::app);
-    if (file.is_open()) {
-        for (size_t i = 0; i < row.size(); ++i) {
-            file << row[i];
-            if (i < row.size() - 1) file << ",";
+void rCSV::rAppRow(std::string rFn, std::vector<std::string> rRw) {
+    std::ofstream rF(rFn, std::ios::app);
+    if (rF.is_open()) {
+        for (size_t i = 0; i < rRw.size(); ++i) {
+            rF << rRw[i];
+            if (i < rRw.size() - 1) rF << ",";
         }
-        file << "\n";
-        file.close();
+        rF << "\n";
+        rF.close();
     }
 }
 
-void CSVReader::writeAll(std::string filename, std::vector<std::vector<std::string>> rows) {
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        for (const auto& row : rows) {
-            for (size_t i = 0; i < row.size(); ++i) {
-                file << row[i];
-                if (i < row.size() - 1) file << ",";
+void rCSV::rWrtAll(std::string rFn, std::vector<std::vector<std::string>> rRws) {
+    std::ofstream rF(rFn);
+    if (rF.is_open()) {
+        for (const auto& rRw : rRws) {
+            for (size_t i = 0; i < rRw.size(); ++i) {
+                rF << rRw[i];
+                if (i < rRw.size() - 1) rF << ",";
             }
-            file << "\n";
+            rF << "\n";
         }
-        file.close();
+        rF.close();
     }
 }
 
 #include <chrono>
 #include <iomanip>
 
-std::string CSVReader::getCurrentTimestamp() {
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
-    return ss.str();
+// get current time
+std::string rCSV::rTime() {
+    auto rNw = std::chrono::system_clock::now();
+    auto rInT = std::chrono::system_clock::to_time_t(rNw);
+    std::stringstream rSs;
+    rSs << std::put_time(std::localtime(&rInT), "%Y-%m-%d %H:%M:%S");
+    return rSs.str();
 }
 
-std::vector<std::string> CSVReader::split(std::string csvLine, char separator) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream tokenStream(csvLine);
-    while (std::getline(tokenStream, token, separator)) {
-        tokens.push_back(token);
+std::vector<std::string> rCSV::rSpl(std::string rLn, char rSep) {
+    std::vector<std::string> rTks;
+    std::string rTk;
+    std::istringstream rTksS(rLn);
+    while (std::getline(rTksS, rTk, rSep)) {
+        rTks.push_back(rTk);
     }
-    return tokens;
+    return rTks;
 }

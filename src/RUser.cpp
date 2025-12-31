@@ -1,4 +1,5 @@
 #include "RUser.h"
 
-User::User(std::string username, std::string customUsername, std::string fullName, std::string email, std::string passwordHash)
-    : username(username), customUsername(customUsername), fullName(fullName), email(email), passwordHash(passwordHash) {}
+// constructor
+rUsr::rUsr(std::string rUsrNm, std::string rCstNm, std::string rFullNm, std::string rEml, std::string rPwdHsh)
+    : rUsrNm(rUsrNm), rCstNm(rCstNm), rFullNm(rFullNm), rEml(rEml), rPwdHsh(rPwdHsh) {}

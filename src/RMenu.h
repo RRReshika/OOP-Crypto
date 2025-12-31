@@ -3,40 +3,38 @@
 #include "RTransactionManager.h"
 #include "RTradeSimulator.h"
 
-class Menu {
+// main menu
+class rMenu {
 public:
-    Menu(UserManager& userManager, TransactionManager& transactionManager, TradeSimulator& tradeSimulator);
-    void init();
+    rMenu(rUsrMgr& rUsrMgr, rTransMgr& rTransMgr, rSim& rSim);
+    // start loop
+    void rInit();
 
 private:
-    UserManager& userManager;
-    TransactionManager& transactionManager;
-    TradeSimulator& tradeSimulator;
-    std::string currentUser;
+    rUsrMgr& rUM;
+    rTransMgr& rTM;
+    rSim& rS;
+    std::string rUsr; // current user
 
-    void printStatusBar();
-    int getUserOption();
-    void processOption(int option);
+    // UI helpers
+    void rBar();
+    int rGetOpt();
+    void rProc(int rOpt);
 
-    void handleRegister();
-    void handleLogin();
-    void handleExchangeStats();
-    void handleMakeOffer();
-    void handleMakeBid();
-    void handleWallet();
-    void handleTransactions();
-    void handleDeposit();
-    void handleWithdraw();
-    void handleStats();
-    void handleSimulateTrading();
-    void handleContinue();
-    void handleMarketAnalysis();
-    void handleForgotUsername();
-    void handlePasswordReset();
-    std::string promptProductSelection();
+    // screen handlers
+    void rReg();
+    void rLgn();
+    void rWltS();
+    void rTransS();
+    void rDep();
+    void rWth();
+    void rStats();
+    void rSimS();
+    void rAnls();
+    void rFgtUsr();
+    void rRstPwd();
+    std::string rSelPrd();
 
-    // Validation helpers
-    bool isValidProduct(const std::string& product);
-    bool isValidTimeframe(const std::string& timeframe);
-    bool isValidDate(const std::string& date);
+    // helper
+    bool rValPrd(const std::string& rProd);
 };

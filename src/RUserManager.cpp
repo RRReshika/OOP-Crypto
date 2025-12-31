@@ -5,138 +5,138 @@
 #include <random>
 #include <algorithm>
 
-UserManager::UserManager(std::string usersFile, std::string walletsFile)
-    : usersFile(usersFile), walletsFile(walletsFile) {
-    loadUsers();
-    loadWallets();
+rUsrMgr::rUsrMgr(std::string rUsrF, std::string rWltF)
+    : rUsrF(rUsrF), rWltF(rWltF) {
+    rLdUsrs();
+    rLdWlts();
 }
 
-bool UserManager::registerUser(std::string fullName, std::string email, std::string password, std::string& outUsername, std::string customUsername) {
-    // Check if user already exists by name and email
-    for (const auto& u : users) {
-        if (u.fullName == fullName && u.email == email) return false;
+bool rUsrMgr::rRegUsr(std::string rFullNm, std::string rEml, std::string rPwd, std::string& rUsrNm, std::string rCstNm) {
+    // check if account exists
+    for (const auto& rU : rUsrs) {
+        if (rU.rFullNm == rFullNm && rU.rEml == rEml) return false;
     }
     
-    // Check if custom username is already taken (if provided)
-    if (!customUsername.empty()) {
-        for (const auto& u : users) {
-            if (u.customUsername == customUsername || u.username == customUsername) return false;
+    // check if custom username taken
+    if (!rCstNm.empty()) {
+        for (const auto& rU : rUsrs) {
+            if (rU.rCstNm == rCstNm || rU.rUsrNm == rCstNm) return false;
         }
     }
     
-    outUsername = generateUniqueUsername();
-    std::string passwordHash = hashPassword(password);
-    users.push_back(User(outUsername, customUsername, fullName, email, passwordHash));
-    wallets[outUsername] = Wallet();
-    // Give initial balance
-    wallets[outUsername].insertCurrency("BTC", 1.0);
-    wallets[outUsername].insertCurrency("USDT", 10000.0);
+    rUsrNm = rGenUsr();
+    std::string rPwdH = rHshPwd(rPwd);
+    rUsrs.push_back(rUsr(rUsrNm, rCstNm, rFullNm, rEml, rPwdH));
+    rWlts[rUsrNm] = rWlt();
+    // starter money
+    rWlts[rUsrNm].rInsCur("BTC", 1.0);
+    rWlts[rUsrNm].rInsCur("USDT", 10000.0);
     
-    saveUsers();
-    saveWallets();
+    rSavUsrs();
+    rSavWlts();
     return true;
 }
 
-bool UserManager::loginUser(std::string loginName, std::string password) {
-    std::string passwordHash = hashPassword(password);
-    for (const auto& u : users) {
-        if ((u.username == loginName || (!u.customUsername.empty() && u.customUsername == loginName)) && u.passwordHash == passwordHash) {
+bool rUsrMgr::rLgnUsr(std::string rLgnNm, std::string rPwd) {
+    std::string rPwdH = rHshPwd(rPwd);
+    for (const auto& rU : rUsrs) {
+        if ((rU.rUsrNm == rLgnNm || (!rU.rCstNm.empty() && rU.rCstNm == rLgnNm)) && rU.rPwdHsh == rPwdH) {
             return true;
         }
     }
     return false;
 }
 
-std::string UserManager::findUsername(std::string fullName, std::string email) {
-    for (const auto& u : users) {
-        if (u.fullName == fullName && u.email == email) {
-            return u.username;
+std::string rUsrMgr::rFndUsr(std::string rFullNm, std::string rEml) {
+    for (const auto& rU : rUsrs) {
+        if (rU.rFullNm == rFullNm && rU.rEml == rEml) {
+            return rU.rUsrNm;
         }
     }
     return "";
 }
 
-bool UserManager::resetPassword(std::string fullName, std::string email, std::string newPassword) {
-    for (auto& u : users) {
-        if (u.fullName == fullName && u.email == email) {
-            u.passwordHash = hashPassword(newPassword);
-            saveUsers();
+bool rUsrMgr::rRstPwd(std::string rFullNm, std::string rEml, std::string rNPwd) {
+    for (auto& rU : rUsrs) {
+        if (rU.rFullNm == rFullNm && rU.rEml == rEml) {
+            rU.rPwdHsh = rHshPwd(rNPwd);
+            rSavUsrs();
             return true;
         }
     }
     return false;
 }
 
-Wallet& UserManager::getWallet(std::string username) {
-    return wallets[username];
+rWlt& rUsrMgr::rGetWlt(std::string rUsrNm) {
+    return rWlts[rUsrNm];
 }
 
-void UserManager::loadUsers() {
-    std::vector<std::vector<std::string>> rows = CSVReader::readCSV(usersFile);
-    for (const auto& tokens : rows) {
-        if (tokens.size() == 5) {
-            users.push_back(User(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4]));
+void rUsrMgr::rLdUsrs() {
+    std::vector<std::vector<std::string>> rRws = rCSV::rRdCSV(rUsrF);
+    for (const auto& rTks : rRws) {
+        if (rTks.size() == 5) {
+            rUsrs.push_back(rUsr(rTks[0], rTks[1], rTks[2], rTks[3], rTks[4]));
         }
     }
 }
 
-void UserManager::loadWallets() {
-    std::vector<std::vector<std::string>> rows = CSVReader::readCSV(walletsFile);
-    for (const auto& tokens : rows) {
-        if (tokens.size() >= 2) {
-            std::string username = tokens[0];
-            for (size_t i = 1; i < tokens.size(); i += 2) {
-                if (i + 1 < tokens.size()) {
-                    wallets[username].insertCurrency(tokens[i], std::stod(tokens[i+1]));
+void rUsrMgr::rLdWlts() {
+    std::vector<std::vector<std::string>> rRws = rCSV::rRdCSV(rWltF);
+    for (const auto& rTks : rRws) {
+        if (rTks.size() >= 2) {
+            std::string rUsrNm = rTks[0];
+            for (size_t i = 1; i < rTks.size(); i += 2) {
+                if (i + 1 < rTks.size()) {
+                    rWlts[rUsrNm].rInsCur(rTks[i], std::stod(rTks[i+1]));
                 }
             }
         }
     }
 }
 
-void UserManager::saveUsers() {
-    std::vector<std::vector<std::string>> rows;
-    for (const auto& u : users) {
-        rows.push_back({u.username, u.customUsername, u.fullName, u.email, u.passwordHash});
+void rUsrMgr::rSavUsrs() {
+    std::vector<std::vector<std::string>> rRws;
+    for (const auto& rU : rUsrs) {
+        rRws.push_back({rU.rUsrNm, rU.rCstNm, rU.rFullNm, rU.rEml, rU.rPwdHsh});
     }
-    CSVReader::writeAll(usersFile, rows);
+    rCSV::rWrtAll(rUsrF, rRws);
 }
 
-void UserManager::saveWallets() {
-    std::vector<std::vector<std::string>> rows;
-    for (auto const& [username, wallet] : wallets) {
-        std::vector<std::string> row;
-        row.push_back(username);
-        for (auto const& [type, amount] : wallet.currencies) {
-            row.push_back(type);
-            row.push_back(std::to_string(amount));
+void rUsrMgr::rSavWlts() {
+    std::vector<std::vector<std::string>> rRws;
+    for (auto const& [rUsrNm, rWlt] : rWlts) {
+        std::vector<std::string> rRw;
+        rRw.push_back(rUsrNm);
+        for (auto const& [rTyp, rAmt] : rWlt.rCurs) {
+            rRw.push_back(rTyp);
+            rRw.push_back(std::to_string(rAmt));
         }
-        rows.push_back(row);
+        rRws.push_back(rRw);
     }
-    CSVReader::writeAll(walletsFile, rows);
+    rCSV::rWrtAll(rWltF, rRws);
 }
 
-std::string UserManager::hashPassword(std::string password) {
-    size_t h = std::hash<std::string>{}(password);
-    return std::to_string(h);
+std::string rUsrMgr::rHshPwd(std::string rPwd) {
+    size_t rH = std::hash<std::string>{}(rPwd);
+    return std::to_string(rH);
 }
 
-std::string UserManager::generateUniqueUsername() {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<long long> dis(1000000000LL, 9999999999LL);
+std::string rUsrMgr::rGenUsr() {
+    static std::random_device rRd;
+    static std::mt19937 rGen(rRd());
+    static std::uniform_int_distribution<long long> rDis(1000000000LL, 9999999999LL);
     
-    std::string username;
-    bool unique = false;
-    while (!unique) {
-        username = std::to_string(dis(gen));
-        unique = true;
-        for (const auto& u : users) {
-            if (u.username == username) {
-                unique = false;
+    std::string rUsrNm;
+    bool rUnq = false;
+    while (!rUnq) {
+        rUsrNm = std::to_string(rDis(rGen));
+        rUnq = true;
+        for (const auto& rU : rUsrs) {
+            if (rU.rUsrNm == rUsrNm) {
+                rUnq = false;
                 break;
             }
         }
     }
-    return username;
+    return rUsrNm;
 }

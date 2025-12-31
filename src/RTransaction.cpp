@@ -1,22 +1,25 @@
 #include "RTransaction.h"
 
-Transaction::Transaction(std::string timestamp, std::string username, TransactionType type, std::string product, double amount, double price, double balanceAfter)
-    : timestamp(timestamp), username(username), type(type), product(product), amount(amount), price(price), balanceAfter(balanceAfter) {}
+// constructor
+rTrans::rTrans(std::string rTime, std::string rUsrNm, rTransTyp rTyp, std::string rProd, double rAmt, double rPrc, double rBalAft)
+    : rTime(rTime), rUsrNm(rUsrNm), rTyp(rTyp), rProd(rProd), rAmt(rAmt), rPrc(rPrc), rBalAft(rBalAft) {}
 
-std::string Transaction::typeToString(TransactionType type) {
-    switch (type) {
-        case TransactionType::deposit: return "deposit";
-        case TransactionType::withdrawal: return "withdrawal";
-        case TransactionType::ask: return "ask";
-        case TransactionType::bid: return "bid";
+// enum to string
+std::string rTrans::rTyp2Str(rTransTyp rTyp) {
+    switch (rTyp) {
+        case rTransTyp::deposit: return "deposit";
+        case rTransTyp::withdrawal: return "withdrawal";
+        case rTransTyp::ask: return "ask";
+        case rTransTyp::bid: return "bid";
         default: return "unknown";
     }
 }
 
-TransactionType Transaction::stringToType(std::string typeStr) {
-    if (typeStr == "deposit") return TransactionType::deposit;
-    if (typeStr == "withdrawal") return TransactionType::withdrawal;
-    if (typeStr == "ask") return TransactionType::ask;
-    if (typeStr == "bid") return TransactionType::bid;
-    return TransactionType::deposit; // Default
+// string to enum
+rTransTyp rTrans::rStr2Typ(std::string rStr) {
+    if (rStr == "deposit") return rTransTyp::deposit;
+    if (rStr == "withdrawal") return rTransTyp::withdrawal;
+    if (rStr == "ask") return rTransTyp::ask;
+    if (rStr == "bid") return rTransTyp::bid;
+    return rTransTyp::deposit; // default
 }

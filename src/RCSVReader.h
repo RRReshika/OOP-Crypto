@@ -1,15 +1,22 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "MarketOrder.h"
+#include "RMarketOrder.h"
 
-class CSVReader {
+// handles all file reading and writing
+class rCSV {
 public:
-    CSVReader();
-    static std::vector<std::vector<std::string>> readCSV(std::string filename);
-    static std::vector<MarketOrder> readMarketOrders(std::string filename);
-    static void appendRow(std::string filename, std::vector<std::string> row);
-    static void writeAll(std::string filename, std::vector<std::vector<std::string>> rows);
-    static std::vector<std::string> split(std::string csvLine, char separator);
-    static std::string getCurrentTimestamp();
+    rCSV();
+    // read any CSV into a list of rows
+    static std::vector<std::vector<std::string>> rRdCSV(std::string rFn);
+    // read market orders from the big data file
+    static std::vector<rMktOrd> rRdMkt(std::string rFn);
+    // add a single new row to the end of a file
+    static void rAppRow(std::string rFn, std::vector<std::string> rRw);
+    // overwrite a whole file with new data
+    static void rWrtAll(std::string rFn, std::vector<std::vector<std::string>> rRws);
+    // helper to split a line by commas
+    static std::vector<std::string> rSpl(std::string rLn, char rSep);
+    // get the current time in a nice format
+    static std::string rTime();
 };
