@@ -84,6 +84,7 @@ std::vector<rSim::rSimRes> rSim::rSimTrds(std::string rUsrNm, rUsrMgr& rUsrMgr, 
                     rCSV::rTime(), rUsrNm, rTransTyp::ask, rP, rAAmt, rAPrc, rW.rGetBal(rBase)
                 ));
                 rAsksC++;
+                rW.rInsCur(rQuote, rAAmt * rAPrc);
             }
 
             // buy
@@ -93,6 +94,7 @@ std::vector<rSim::rSimRes> rSim::rSimTrds(std::string rUsrNm, rUsrMgr& rUsrMgr, 
             double rCost = rBAmt * rBPrc;
 
             if (rW.rRemCur(rQuote, rCost)) {
+                rW.rInsCur(rBase, rBAmt);
                 rTransMgr.rSavTrans(rTrans(
                     rCSV::rTime(), rUsrNm, rTransTyp::bid, rP, rBAmt, rBPrc, rW.rGetBal(rQuote)
                 ));

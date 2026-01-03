@@ -29,9 +29,11 @@ bool rUsrMgr::rRegUsr(std::string rFullNm, std::string rEml, std::string rPwd, s
     std::string rPwdH = rHshPwd(rPwd);
     rUsrs.push_back(rUsr(rUsrNm, rCstNm, rFullNm, rEml, rPwdH));
     rWlts[rUsrNm] = rWlt();
-    // starter money
-    rWlts[rUsrNm].rInsCur("BTC", 1.0);
-    rWlts[rUsrNm].rInsCur("USDT", 10000.0);
+    // starter portfolio - enough to trade all pairs
+    rWlts[rUsrNm].rInsCur("BTC", 10.0);
+    rWlts[rUsrNm].rInsCur("ETH", 50.0);
+    rWlts[rUsrNm].rInsCur("DOGE", 10000.0);
+    rWlts[rUsrNm].rInsCur("USDT", 50000.0);
     
     rSavUsrs();
     rSavWlts();

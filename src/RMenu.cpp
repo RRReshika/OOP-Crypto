@@ -27,7 +27,13 @@ void rMenu::rInit() {
             // Execute selected action (menu will NOT re-render during execution)
             if (rCh == 0) rReg();
             else if (rCh == 1) rLgn();
-            else if (rCh == 2) break;
+            else if (rCh == 2) {
+                // Show session summary if user was logged in during this session
+                if (rSessStat.rGetTotTrds() > 0 || rSessStat.rGetDeps() > 0 || rSessStat.rGetWths() > 0) {
+                    rSessStat.rShowSumm(0.0); // No user context, show 0 balance
+                }
+                break;
+            }
             // After action completes, outer loop continues and menu is RE-INVOKED
         } else {
             // User logged in - show main menu
@@ -51,7 +57,14 @@ void rMenu::rInit() {
             
             // Execute selected action (menu will NOT re-render during execution)
             if (rCh == 5) {
+                // Show session summary before logout
+                rWlt& rWal = rUM.rGetWlt(rUsr);
+                double rFinalBal = rWal.rGetBal("USDT");
+                if (rSessStat.rGetTotTrds() > 0 || rSessStat.rGetDeps() > 0 || rSessStat.rGetWths() > 0) {
+                    rSessStat.rShowSumm(rFinalBal);
+                }
                 rUsr = ""; // Logout
+                rSessStat.rReset(); // Reset stats for next session
                 rUI::rOk("Logged out successfully.");
                 std::cout << "\nPress Enter to continue...";
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -298,6 +311,7 @@ void rMenu::rRstPwd() {
 }
 
 #include "RMarketOrder.h"
+#include "RTrendAnalyzer.h"
 
 void rMenu::rAnls() {
     std::string rP = rSelPrd();
@@ -346,6 +360,62 @@ void rMenu::rAnls() {
 
     rPrnTbl("Asks Candlestick Summary", rAsks, rUI::rRd);
     rPrnTbl("Bids Candlestick Summary", rBids, rUI::rGr);
+
+    // Display trend analysis for most recent candle
+    if (!rBids.empty()) {
+        std::cout << "\n" << rUI::rB << rUI::rCy << " TREND ANALYSIS (Most Recent Period)" << rUI::rR << "\n";
+        std::cout << " " << rUI::rTL << std::string(70, rUI::rH[0]) << rUI::rTR << "\n";
+        
+        const rCandle& rLatest = rBids.back();
+        rTrend rT = rTrendAnlz::rAnalyze(rLatest);
+        double rStr = rTrendAnlz::rGetStrength(rLatest);
+        
+        std::string rTrndNm = rTrendAnlz::rGetDesc(rT);
+        std::string rTrndCol = (rT == rTrend::Bullish) ? rUI::rGr : (rT == rTrend::Bearish) ? rUI::rRd : rUI::rYe;
+        
+        std::cout << " " << rUI::rV << " " << rUI::rB << "Market Trend: " << rTrndCol << rTrndNm << rUI::rR;
+        
+        if (rT == rTrend::Bullish) {
+            std::cout << " (price closed higher than it opened)" << std::string(6, ' ') << rUI::rV << "\n";
+        } else if (rT == rTrend::Bearish) {
+            std::cout << " (price closed lower than it opened)" << std::string(7, ' ') << rUI::rV << "\n";
+        } else {
+            std::cout << " (price unchanged / sideways movement)" << std::string(9, ' ') << rUI::rV << "\n";
+        }
+        
+        std::cout << " " << rUI::rV << " Open: " << std::fixed << std::setprecision(4) << rLatest.rOp 
+                  << " | Close: " << rLatest.rCl << std::string(31, ' ') << rUI::rV << "\n";
+        std::cout << " " << rUI::rV << " Change: " << rTrndCol << std::showpos << std::setprecision(2) << rStr << "%" << std::noshowpos << rUI::rR;
+        
+        if (rTrendAnlz::rIsStrong(rLatest)) {
+            std::cout << " [Strong momentum]" << std::string(33, ' ');
+        } else {
+            std::cout << std::string(52, ' ');
+        }
+        std::cout << rUI::rV << "\n";
+        
+        // Volatility Analysis
+        rVolatility rVol = rTrendAnlz::rGetVolLevel(rLatest);
+        double rVolScore = rTrendAnlz::rCalcVolScore(rLatest) * 100.0;
+        std::string rVolNm = rTrendAnlz::rGetVolDesc(rVol);
+        std::string rVolCol = (rVol == rVolatility::High) ? rUI::rRd : (rVol == rVolatility::Medium) ? rUI::rYe : rUI::rGr;
+        
+        std::cout << " " << rUI::rV << " " << rUI::rB << "Volatility: " << rVolCol << rVolNm << rUI::rR;
+        
+        if (rVol == rVolatility::High) {
+            std::cout << " (large price movement within this period)" << std::string(8, ' ') << rUI::rV << "\n";
+        } else if (rVol == rVolatility::Medium) {
+            std::cout << " (moderate price movement within this period)" << std::string(4, ' ') << rUI::rV << "\n";
+        } else {
+            std::cout << " (minimal price movement within this period)" << std::string(6, ' ') << rUI::rV << "\n";
+        }
+        
+        std::cout << " " << rUI::rV << " Price Range: " << std::setprecision(2) << rVolScore << "% "
+                  << "(High: " << std::setprecision(4) << rLatest.rHi << ", Low: " << rLatest.rLo << ")" 
+                  << std::string(9, ' ') << rUI::rV << "\n";
+        
+        std::cout << " " << rUI::rBL << std::string(70, rUI::rH[0]) << rUI::rBR << "\n";
+    }
 
     std::cout << "\nPress Enter to continue...";
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -453,6 +523,7 @@ void rMenu::rDep() {
         rTM.rSavTrans(rTrans(
             rCSV::rTime(), rUsr, rTransTyp::deposit, rTyp, rAmt, 1.0, rW.rGetBal(rTyp)
         ));
+        rSessStat.rRecDep(); // Track deposit in session stats
         rUI::rOk("Deposit successful!");
     } catch (...) {
         rUI::rErr("Invalid amount.");
@@ -480,6 +551,7 @@ void rMenu::rWth() {
         rWlt& rW = rUM.rGetWlt(rUsr);
         if (rW.rWth(rTyp, rAmt)) {
             rUM.rSavWlts();
+            rSessStat.rRecWth(); // Track withdrawal in session stats
             rTM.rSavTrans(rTrans(
                 rCSV::rTime(), rUsr, rTransTyp::withdrawal, rTyp, rAmt, 1.0, rW.rGetBal(rTyp)
             ));
@@ -527,6 +599,12 @@ void rMenu::rStats() {
 void rMenu::rSimS() {
     rUI::rHdr("SIMULATING TRADES");
     std::vector<rSim::rSimRes> rRes = rS.rSimTrds(rUsr, rUM, rTM);
+    
+    // Track trades in session statistics
+    for (const auto& rR : rRes) {
+        for (int i = 0; i < rR.rBids; i++) rSessStat.rRecBuy();
+        for (int i = 0; i < rR.rAsks; i++) rSessStat.rRecSell();
+    }
     
     std::cout << " " << rUI::rTL << std::string(38, rUI::rH[0]) << rUI::rTR << "\n";
     for (const auto& rR : rRes) {

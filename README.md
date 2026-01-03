@@ -7,13 +7,13 @@ Student Number: 240621557
 A C++ based cryptocurrency trading simulator with a terminal-based user interface, market data analysis, and user management.
 
 ## Features
-- 🔐 Secure user authentication with password hashing
-- 🔒 Account lockout protection (3 failed attempts, 5-minute lockout)
-- 💼 Multi-cryptocurrency wallet management
-- 📊 Market data analysis and candlestick charts
-- 💱 Trading simulation with real-time market data
-- 📝 Transaction history tracking
-- ⌨️ Interactive arrow-key navigation menu system
+-  Secure user authentication with password hashing
+- Account lockout protection (3 failed attempts, 5-minute lockout)
+- Multi-cryptocurrency wallet management
+- Market data analysis and candlestick charts
+- Trading simulation with real-time market data
+- Transaction history tracking
+- Interactive arrow-key navigation menu system
 
 ## Quick Start
 

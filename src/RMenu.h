@@ -2,6 +2,7 @@
 #include "RUserManager.h"
 #include "RTransactionManager.h"
 #include "RTradeSimulator.h"
+#include "RSessionStats.h"
 
 // main menu
 class rMenu {
@@ -15,6 +16,7 @@ private:
     rTransMgr& rTM;
     rSim& rS;
     std::string rUsr; // current user
+    rSessStats rSessStat; // session statistics tracker
 
     // UI helpers
     void rBar();
