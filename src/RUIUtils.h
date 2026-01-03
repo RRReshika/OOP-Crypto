@@ -74,10 +74,13 @@ namespace rUI {
         return rCh;
     }
 
+
+
     inline int rMenu(const std::string& rTit, const std::vector<std::string>& rOpts) {
         int rSel = 0;
         while (true) {
             std::cout << "\033[2J\033[1;1H";
+            std::cout.flush();
             rLogo();
             std::cout << rB << rCy << "\n " << rTL << std::string(38, rH[0]) << rTR << "\n";
             std::cout << " " << rV << " " << rTit << std::string(37 - rTit.length(), ' ') << rV << "\n";
@@ -101,6 +104,8 @@ namespace rUI {
             } else if (rCh == 1001) {
                 rSel = (rSel + 1) % rOpts.size();
             } else if (rCh == 10 || rCh == 13) {
+                std::cout << "\033[2J\033[1;1H";
+                std::cout.flush();
                 return rSel;
             }
         }
