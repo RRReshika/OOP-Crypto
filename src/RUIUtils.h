@@ -4,6 +4,7 @@
 #include <vector>
 #include <termios.h>
 #include <unistd.h>
+#include <cstring>
 
 namespace rUI {
     // ANSI colors
@@ -39,76 +40,159 @@ namespace rUI {
         std::cout << rR;
     }
 
-    // raw char input
-    inline int rGetCh() {
-        struct termios rOld, rNew;
-        char rBuf = 0;
+    // Sanitize input by removing escape sequences and non-printable chars
+    inline std::string rSanitize(const std::string& rIn) {
+        std::string rOut;
+        bool rEsc = false;
         
+        for (size_t i = 0; i < rIn.length(); ++i) {
+            char c = rIn[i];
+            
+            // Detect start of escape sequence
+            if (c == 27 || c == '\033') {
+                rEsc = true;
+                continue;
+            }
+            
+            // Skip characters that are part of escape sequence
+            if (rEsc) {
+                // Escape sequences typically end with a letter
+                if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+                    rEsc = false;
+                }
+                continue;
+            }
+            
+            // Only keep printable characters and spaces
+            if ((c >= 32 && c <= 126) || c == '\n' || c == '\t') {
+                rOut += c;
+            }
+        }
+        
+        return rOut;
+    }
+
+    // Raw character input for menu navigation only
+    // Returns: -1=error, 10/13=enter, 1000=up, 1001=down
+    inline int rGetKey() {
+        struct termios rOld, rNew;
+        
+        // Save current terminal settings
         if (tcgetattr(STDIN_FILENO, &rOld) < 0) return -1;
         
+        // Configure raw mode: no echo, no canonical processing
         rNew = rOld;
         rNew.c_lflag &= ~(ICANON | ECHO);
         rNew.c_cc[VMIN] = 1;
         rNew.c_cc[VTIME] = 0;
         
+        // Apply raw mode temporarily
         if (tcsetattr(STDIN_FILENO, TCSANOW, &rNew) < 0) return -1;
         
-        if (read(STDIN_FILENO, &rBuf, 1) < 0) {
+        char rBuf[3];
+        std::memset(rBuf, 0, sizeof(rBuf));
+        
+        // Read first character
+        if (read(STDIN_FILENO, &rBuf[0], 1) < 0) {
             tcsetattr(STDIN_FILENO, TCSANOW, &rOld);
             return -1;
         }
         
-        int rCh = (unsigned char)rBuf;
+        int rKey = (unsigned char)rBuf[0];
         
-        if (rCh == 27) { // Escape sequence
-            char rSeq[2];
-            if (read(STDIN_FILENO, &rSeq[0], 1) > 0 && read(STDIN_FILENO, &rSeq[1], 1) > 0) {
-                if (rSeq[0] == '[') {
-                    if (rSeq[1] == 'A') rCh = 1000; // up
-                    else if (rSeq[1] == 'B') rCh = 1001; // down
+        // Handle escape sequences (arrow keys)
+        if (rKey == 27) {
+            // Try to read next two bytes for arrow key sequence
+            if (read(STDIN_FILENO, &rBuf[1], 1) > 0) {
+                if (rBuf[1] == '[') {
+                    if (read(STDIN_FILENO, &rBuf[2], 1) > 0) {
+                        if (rBuf[2] == 'A') rKey = 1000; // Up arrow
+                        else if (rBuf[2] == 'B') rKey = 1001; // Down arrow
+                    }
                 }
             }
         }
         
+        // Restore terminal settings immediately
         tcsetattr(STDIN_FILENO, TCSANOW, &rOld);
-        return rCh;
+        
+        return rKey;
     }
 
-
-
-    inline int rMenu(const std::string& rTit, const std::vector<std::string>& rOpts) {
+    // Modal menu with explicit lifecycle control
+    // LOOP LIFECYCLE:
+    //   - Starts: Menu enters dedicated navigation loop
+    //   - During: Handles arrow keys, redraws on each navigation
+    //   - Terminates: IMMEDIATELY on Enter - loop exits via return
+    //   - After: Control transfers to caller, menu never re-renders unless re-invoked
+    inline int rMenu(const std::string& rTit, const std::vector<std::string>& rOpts, 
+                     const std::string& rInfoBar = "") {
         int rSel = 0;
+        
+        // MENU LOOP - Runs ONLY while user is selecting
         while (true) {
+            // Clear screen and position cursor at top
             std::cout << "\033[2J\033[1;1H";
             std::cout.flush();
+            
+            // Display info bar if provided (e.g., user balance)
+            if (!rInfoBar.empty()) {
+                std::cout << rBgBl << rWh << rB << " " << rInfoBar;
+                // Pad to 80 characters
+                int rPad = 79 - rInfoBar.length();
+                if (rPad > 0) std::cout << std::string(rPad, ' ');
+                std::cout << rR << "\n";
+            }
+            
+            // Render menu completely
             rLogo();
             std::cout << rB << rCy << "\n " << rTL << std::string(38, rH[0]) << rTR << "\n";
             std::cout << " " << rV << " " << rTit << std::string(37 - rTit.length(), ' ') << rV << "\n";
             std::cout << " " << rML << std::string(38, rH[0]) << rMR << "\n";
             
-            for (int i = 0; i < rOpts.size(); ++i) {
+            // Render all options with current selection highlighted
+            for (size_t i = 0; i < rOpts.size(); ++i) {
                 std::cout << " " << rV << " ";
-                if (i == rSel) {
+                if (i == (size_t)rSel) {
+                    // Highlighted option
                     std::cout << rBgBl << rWh << rB << " > " << rOpts[i] << " " << rR;
-                    std::cout << std::string(34 - rOpts[i].length(), ' ') << rV << "\n";
+                    int pad = 34 - rOpts[i].length();
+                    if (pad > 0) std::cout << std::string(pad, ' ');
                 } else {
-                    std::cout << "   " << rOpts[i] << std::string(35 - rOpts[i].length(), ' ') << rV << "\n";
+                    // Normal option
+                    std::cout << "   " << rOpts[i];
+                    int pad = 35 - rOpts[i].length();
+                    if (pad > 0) std::cout << std::string(pad, ' ');
                 }
+                std::cout << rV << "\n";
             }
+            
             std::cout << " " << rBL << std::string(38, rH[0]) << rBR << "\n" << rR;
-            std::cout << "\n [Arrows] Move  [Enter] Select\n";
-
-            int rCh = rGetCh();
-            if (rCh == 1000) {
+            std::cout << "\n " << rB << "[↑/↓]" << rR << " Navigate  " 
+                      << rB << "[Enter]" << rR << " Select";
+            std::cout.flush();
+            
+            // Get key input in raw mode (no echo)
+            int rKey = rGetKey();
+            
+            // Handle navigation keys - update selection and continue loop
+            if (rKey == 1000) { // Up arrow
                 rSel = (rSel - 1 + rOpts.size()) % rOpts.size();
-            } else if (rCh == 1001) {
+                // Loop continues - menu will redraw with new selection
+            } else if (rKey == 1001) { // Down arrow
                 rSel = (rSel + 1) % rOpts.size();
-            } else if (rCh == 10 || rCh == 13) {
+                // Loop continues - menu will redraw with new selection
+            } else if (rKey == 10 || rKey == 13) { // Enter key
+                // EXPLICIT TERMINATION: Clear screen and exit loop immediately
                 std::cout << "\033[2J\033[1;1H";
                 std::cout.flush();
+                // RETURN terminates loop - control transfers to caller
+                // Menu will NOT re-render unless explicitly re-invoked
                 return rSel;
             }
+            // All other keys ignored - loop continues for next valid input
         }
+        // This point is never reached due to return statement above
     }
 
     inline void rHdr(const std::string& rTit) {

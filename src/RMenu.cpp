@@ -11,15 +11,26 @@ rMenu::rMenu(rUsrMgr& rUM, rTransMgr& rTM, rSim& rS)
     : rUM(rUM), rTM(rTM), rS(rS), rUsr("") {}
 
 void rMenu::rInit() {
+    // Main application loop - re-invokes menu after each action completes
     while (true) {
         if (rUsr == "") {
+            // User not logged in - show welcome menu
             std::vector<std::string> rOpts = {"Register", "Login", "Exit"};
-            int rCh = rUI::rMenu("CRYPTO TOOLKIT - WELCOME", rOpts);
             
+            // MENU INVOCATION: Enters modal menu loop
+            // - Menu loop runs with dedicated navigation handling
+            // - Returns only when user presses Enter
+            // - Menu loop terminates immediately upon return
+            int rCh = rUI::rMenu("CRYPTO TOOLKIT - WELCOME", rOpts);
+            // MENU TERMINATED: Control returned, menu loop no longer running
+            
+            // Execute selected action (menu will NOT re-render during execution)
             if (rCh == 0) rReg();
             else if (rCh == 1) rLgn();
             else if (rCh == 2) break;
+            // After action completes, outer loop continues and menu is RE-INVOKED
         } else {
+            // User logged in - show main menu
             std::vector<std::string> rOpts = {
                 "Market Analysis (Candlesticks)",
                 "Wallet (Deposit/Withdraw)",
@@ -29,17 +40,25 @@ void rMenu::rInit() {
                 "Logout"
             };
             
-            rBar();
-            int rCh = rUI::rMenu("CRYPTO TOOLKIT - MAIN MENU", rOpts);
+            // Build info bar with user and balance
+            rWlt& rW = rUM.rGetWlt(rUsr);
+            std::string rInfo = "User: " + rUsr + " | Balance: " + 
+                               std::to_string(rW.rGetBal("USDT")) + " USDT";
             
+            // MENU INVOCATION: Enters modal menu loop
+            int rCh = rUI::rMenu("CRYPTO TOOLKIT - MAIN MENU", rOpts, rInfo);
+            // MENU TERMINATED: Control returned, menu loop no longer running
+            
+            // Execute selected action (menu will NOT re-render during execution)
             if (rCh == 5) {
                 rUsr = ""; // Logout
                 rUI::rOk("Logged out successfully.");
                 std::cout << "\nPress Enter to continue...";
-                std::cin.get();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             } else {
                 rProc(rCh + 1);
             }
+            // After action completes, outer loop continues and menu is RE-INVOKED
         }
     }
 }
@@ -55,17 +74,45 @@ void rMenu::rBar() {
 }
 
 int rMenu::rGetOpt() {
-    int rOpt = -1;
     std::string rLn;
-    if (std::getline(std::cin, rLn)) {
-        if (rLn.empty()) return -1;
-        try {
-            rOpt = std::stoi(rLn);
-        } catch (...) {
-            rOpt = -1;
+    while (true) {
+        if (std::getline(std::cin, rLn)) {
+            // Sanitize input to remove escape sequences
+            rLn = rUI::rSanitize(rLn);
+            
+            // Trim whitespace
+            size_t rStart = rLn.find_first_not_of(" \t\n\r");
+            size_t rEnd = rLn.find_last_not_of(" \t\n\r");
+            
+            if (rStart == std::string::npos || rLn.empty()) {
+                return -1;  // Empty input means cancel/back
+            }
+            
+            rLn = rLn.substr(rStart, rEnd - rStart + 1);
+            
+            // Check if input contains only digits
+            bool rValid = true;
+            for (char c : rLn) {
+                if (c < '0' || c > '9') {
+                    rValid = false;
+                    break;
+                }
+            }
+            
+            if (!rValid) {
+                std::cout << rUI::rRd << " [✗] Invalid input. Enter a number: " << rUI::rR;
+                continue;
+            }
+            
+            try {
+                return std::stoi(rLn);
+            } catch (...) {
+                std::cout << rUI::rRd << " [✗] Invalid number. Try again: " << rUI::rR;
+                continue;
+            }
         }
+        return -1;
     }
-    return rOpt;
 }
 
 std::string rMenu::rSelPrd() {
@@ -131,7 +178,7 @@ void rMenu::rReg() {
         rUI::rErr("Registration failed.");
     }
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rLgn() {
@@ -160,7 +207,7 @@ void rMenu::rLgn() {
     }
     if (rUsr != "") {
         std::cout << "\nPress Enter to continue...";
-        std::cin.get();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
 
@@ -180,7 +227,7 @@ void rMenu::rFgtUsr() {
         rUI::rErr("No user found.");
     }
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rRstPwd() {
@@ -199,7 +246,7 @@ void rMenu::rRstPwd() {
         rUI::rErr("Verification failed.");
     }
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 #include "RMarketOrder.h"
@@ -251,7 +298,7 @@ void rMenu::rAnls() {
     rPrnTbl("Bids Candlestick Summary", rBids, rUI::rGr);
 
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rWltS() {
@@ -288,7 +335,7 @@ void rMenu::rWltS() {
 
     rPrnTransTbl(rRec);
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rTransS() {
@@ -329,7 +376,7 @@ void rMenu::rTransS() {
 
     rPrnTransTbl(rFltrd);
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rDep() {
@@ -359,7 +406,7 @@ void rMenu::rDep() {
         rUI::rErr("Invalid amount.");
     }
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rWth() {
@@ -391,7 +438,7 @@ void rMenu::rWth() {
         rUI::rErr("Invalid amount.");
     }
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rStats() {
@@ -420,7 +467,7 @@ void rMenu::rStats() {
     std::cout << " " << rUI::rBL << std::string(38, rUI::rH[0]) << rUI::rBR << "\n";
     
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void rMenu::rSimS() {
@@ -436,7 +483,7 @@ void rMenu::rSimS() {
     
     rUI::rOk("Trades saved.");
     std::cout << "\nPress Enter to continue...";
-    std::cin.get();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 bool rMenu::rValPrd(const std::string& rProd) {
