@@ -21,6 +21,10 @@ public:
     rWlt& rGetWlt(std::string rUsrNm);
     // save wallets to CSV
     void rSavWlts();
+    // check if account is locked
+    bool rIsLocked(std::string rUsrNm);
+    // get remaining lockout time in seconds
+    int rGetLockTime(std::string rUsrNm);
 
 private:
     std::string rUsrF;

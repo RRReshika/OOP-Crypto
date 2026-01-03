@@ -117,7 +117,9 @@ int rMenu::rGetOpt() {
 
 std::string rMenu::rSelPrd() {
     std::vector<std::string> rPrds = rS.rGetMkt().rGetProds();
+    rPrds.push_back("← Back");  // Add back option
     int rCh = rUI::rMenu("SELECT PRODUCT", rPrds);
+    if (rCh == (int)rPrds.size() - 1) return "";  // Back selected
     return rPrds[rCh];
 }
 
@@ -148,15 +150,27 @@ void rMenu::rProc(int rOpt) {
 void rMenu::rReg() {
     std::string rFullNm, rEml, rPwd, rUsrNm, rCstNm;
     rUI::rHdr("REGISTER NEW USER");
+    rUI::rInf("Press Enter without input on any field to go back");
     
     std::cout << "Full Name: ";
     std::getline(std::cin, rFullNm);
+    if (rFullNm.empty()) return;  // Back on empty input
     
     std::cout << "Email: ";
     std::getline(std::cin, rEml);
+    if (rEml.empty()) return;  // Back on empty input
     
-    std::cout << "Password: ";
+    std::cout << "Password (minimum 6 characters): ";
     std::getline(std::cin, rPwd);
+    if (rPwd.empty()) return;  // Back on empty input
+    
+    // Validate password length
+    while (rPwd.length() < 6) {
+        rUI::rErr("Password must be at least 6 characters long.");
+        std::cout << "Password (minimum 6 characters): ";
+        std::getline(std::cin, rPwd);
+        if (rPwd.empty()) return;  // Back on empty input
+    }
     
     std::cout << "Do you want to create a custom username? (y/n): ";
     std::string rCh;
@@ -167,7 +181,8 @@ void rMenu::rReg() {
     }
     
     if (rFullNm.empty() || rEml.empty() || rPwd.empty()) {
-        rUI::rErr("All fields are required.");
+        rUI::rWrn("Registration cancelled or incomplete fields.");
+        return;
     } else if (rUM.rRegUsr(rFullNm, rEml, rPwd, rUsrNm, rCstNm)) {
         rUI::rOk("Registered successfully!");
         std::cout << "Your 10-digit ID is: " << rUI::rB << rUI::rCy << rUsrNm << rUI::rR << "\n";
@@ -184,15 +199,41 @@ void rMenu::rReg() {
 void rMenu::rLgn() {
     std::string rU, rP;
     rUI::rHdr("LOGIN");
+    rUI::rInf("Press Enter without input to go back");
     std::cout << "Username: ";
     std::getline(std::cin, rU);
+    if (rU.empty()) return;  // Back on empty input
+    
+    // Check if account is locked
+    if (rUM.rIsLocked(rU)) {
+        int rRemaining = rUM.rGetLockTime(rU);
+        int rMins = rRemaining / 60;
+        int rSecs = rRemaining % 60;
+        rUI::rErr("Account temporarily locked.");
+        std::cout << rUI::rYe << " [!] Too many failed attempts." << rUI::rR << "\n";
+        std::cout << rUI::rYe << " [!] Try again in " << rMins << "m " << rSecs << "s" << rUI::rR << "\n";
+        std::cout << "\nPress Enter to continue...";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return;
+    }
+    
     std::cout << "Password: ";
     std::getline(std::cin, rP);
+    if (rP.empty()) return;  // Back on empty input
     
     if (rUM.rLgnUsr(rU, rP)) {
         rUsr = rU;
         rUI::rOk("Logged in!");
     } else {
+        // Check if just locked
+        if (rUM.rIsLocked(rU)) {
+            rUI::rErr("Account locked after 3 failed attempts.");
+            std::cout << rUI::rYe << " [!] Account temporarily locked for 5 minutes." << rUI::rR << "\n";
+            std::cout << "\nPress Enter to continue...";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return;
+        }
+        
         rUI::rErr("Invalid credentials.");
         std::cout << "\nOptions:\n";
         std::cout << " 1: Re-enter\n";
@@ -214,10 +255,13 @@ void rMenu::rLgn() {
 void rMenu::rFgtUsr() {
     std::string rFullNm, rEml;
     rUI::rHdr("FORGOT USERNAME");
+    rUI::rInf("Press Enter without input to go back");
     std::cout << "Full Name: ";
     std::getline(std::cin, rFullNm);
+    if (rFullNm.empty()) return;  // Back on empty input
     std::cout << "Email: ";
     std::getline(std::cin, rEml);
+    if (rEml.empty()) return;  // Back on empty input
     
     std::string rUsrNm = rUM.rFndUsr(rFullNm, rEml);
     if (rUsrNm != "") {
@@ -233,12 +277,16 @@ void rMenu::rFgtUsr() {
 void rMenu::rRstPwd() {
     std::string rFullNm, rEml, rNPwd;
     rUI::rHdr("PASSWORD RESET");
+    rUI::rInf("Press Enter without input to go back");
     std::cout << "Full Name: ";
     std::getline(std::cin, rFullNm);
+    if (rFullNm.empty()) return;  // Back on empty input
     std::cout << "Email: ";
     std::getline(std::cin, rEml);
+    if (rEml.empty()) return;  // Back on empty input
     std::cout << "New Password: ";
     std::getline(std::cin, rNPwd);
+    if (rNPwd.empty()) return;  // Back on empty input
     
     if (rUM.rRstPwd(rFullNm, rEml, rNPwd)) {
         rUI::rOk("Password updated!");
@@ -253,13 +301,15 @@ void rMenu::rRstPwd() {
 
 void rMenu::rAnls() {
     std::string rP = rSelPrd();
-    if (rP == "" || !rValPrd(rP)) {
+    if (rP == "") return;  // Back selected
+    if (!rValPrd(rP)) {
         rUI::rWrn("Invalid product.");
         return;
     }
 
-    std::vector<std::string> rTfs = {"Daily", "Monthly", "Yearly"};
+    std::vector<std::string> rTfs = {"Daily", "Monthly", "Yearly", "← Back"};
     int rTfCh = rUI::rMenu("SELECT TIMEFRAME", rTfs);
+    if (rTfCh == 3) return;  // Back selected
     std::string rTf = (rTfCh == 0) ? "daily" : (rTfCh == 1) ? "monthly" : "yearly";
 
     std::vector<rMktOrd> rOrds = rCSV::rRdMkt("data/20200601.csv");
@@ -340,7 +390,8 @@ void rMenu::rWltS() {
 
 void rMenu::rTransS() {
     rUI::rHdr("YOUR TRANSACTIONS");
-    std::cout << "Filter by product: ";
+    rUI::rInf("Press Enter without input to show all transactions");
+    std::cout << "Filter by product (or press Enter for all): ";
     std::string rP;
     std::getline(std::cin, rP);
     
@@ -381,10 +432,11 @@ void rMenu::rTransS() {
 
 void rMenu::rDep() {
     rUI::rHdr("DEPOSIT FUNDS");
+    rUI::rInf("Press Enter without input to go back");
     std::cout << "Currency: ";
     std::string rTyp;
     std::getline(std::cin, rTyp);
-    if (rTyp.empty()) return;
+    if (rTyp.empty()) return;  // Back on empty input
 
     std::cout << "Amount: ";
     std::string rAmtS;
@@ -411,10 +463,11 @@ void rMenu::rDep() {
 
 void rMenu::rWth() {
     rUI::rHdr("WITHDRAW FUNDS");
+    rUI::rInf("Press Enter without input to go back");
     std::cout << "Currency: ";
     std::string rTyp;
     std::getline(std::cin, rTyp);
-    if (rTyp.empty()) return;
+    if (rTyp.empty()) return;  // Back on empty input
 
     std::cout << "Amount: ";
     std::string rAmtS;
@@ -443,7 +496,8 @@ void rMenu::rWth() {
 
 void rMenu::rStats() {
     rUI::rHdr("USER STATISTICS");
-    std::cout << "Date (YYYY-MM-DD): ";
+    rUI::rInf("Press Enter without input to show all statistics");
+    std::cout << "Date (YYYY-MM-DD) or Enter for all: ";
     std::string rDt;
     std::getline(std::cin, rDt);
     

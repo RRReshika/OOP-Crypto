@@ -38,7 +38,7 @@ std::vector<rTrans> rTransMgr::rRecTrans(std::string rUsrNm, int rCnt, std::stri
         if (it->rUsrNm == rUsrNm) {
             if (rProd == "" || it->rProd == rProd) {
                 rFltrd.push_back(*it);
-                if (rFltrd.size() >= rCnt) break;
+                if (rFltrd.size() >= static_cast<size_t>(rCnt)) break;
             }
         }
     }

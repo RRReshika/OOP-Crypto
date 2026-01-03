@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <ctime>
 
 rUsrMgr::rUsrMgr(std::string rUsrF, std::string rWltF)
     : rUsrF(rUsrF), rWltF(rWltF) {
@@ -39,9 +40,44 @@ bool rUsrMgr::rRegUsr(std::string rFullNm, std::string rEml, std::string rPwd, s
 
 bool rUsrMgr::rLgnUsr(std::string rLgnNm, std::string rPwd) {
     std::string rPwdH = rHshPwd(rPwd);
-    for (const auto& rU : rUsrs) {
-        if ((rU.rUsrNm == rLgnNm || (!rU.rCstNm.empty() && rU.rCstNm == rLgnNm)) && rU.rPwdHsh == rPwdH) {
-            return true;
+    
+    for (auto& rU : rUsrs) {
+        if (rU.rUsrNm == rLgnNm || (!rU.rCstNm.empty() && rU.rCstNm == rLgnNm)) {
+            // Check if account is locked
+            if (rU.rLockTime > 0) {
+                std::time_t rNow = std::time(nullptr);
+                double rElapsed = std::difftime(rNow, rU.rLockTime);
+                
+                // Unlock after 5 minutes (300 seconds)
+                if (rElapsed >= 300) {
+                    rU.rFailAttempts = 0;
+                    rU.rLockTime = 0;
+                    rSavUsrs();
+                } else {
+                    // Still locked
+                    return false;
+                }
+            }
+            
+            // Check password
+            if (rU.rPwdHsh == rPwdH) {
+                // Successful login - reset attempts
+                rU.rFailAttempts = 0;
+                rU.rLockTime = 0;
+                rSavUsrs();
+                return true;
+            } else {
+                // Failed login - increment attempts
+                rU.rFailAttempts++;
+                
+                // Lock after 3 failed attempts
+                if (rU.rFailAttempts >= 3) {
+                    rU.rLockTime = std::time(nullptr);
+                }
+                
+                rSavUsrs();
+                return false;
+            }
         }
     }
     return false;
@@ -74,8 +110,14 @@ rWlt& rUsrMgr::rGetWlt(std::string rUsrNm) {
 void rUsrMgr::rLdUsrs() {
     std::vector<std::vector<std::string>> rRws = rCSV::rRdCSV(rUsrF);
     for (const auto& rTks : rRws) {
-        if (rTks.size() == 5) {
-            rUsrs.push_back(rUsr(rTks[0], rTks[1], rTks[2], rTks[3], rTks[4]));
+        if (rTks.size() >= 5) {
+            rUsr rU(rTks[0], rTks[1], rTks[2], rTks[3], rTks[4]);
+            // Load lockout info if available
+            if (rTks.size() >= 7) {
+                rU.rFailAttempts = std::stoi(rTks[5]);
+                rU.rLockTime = std::stoll(rTks[6]);
+            }
+            rUsrs.push_back(rU);
         }
     }
 }
@@ -97,7 +139,15 @@ void rUsrMgr::rLdWlts() {
 void rUsrMgr::rSavUsrs() {
     std::vector<std::vector<std::string>> rRws;
     for (const auto& rU : rUsrs) {
-        rRws.push_back({rU.rUsrNm, rU.rCstNm, rU.rFullNm, rU.rEml, rU.rPwdHsh});
+        rRws.push_back({
+            rU.rUsrNm, 
+            rU.rCstNm, 
+            rU.rFullNm, 
+            rU.rEml, 
+            rU.rPwdHsh,
+            std::to_string(rU.rFailAttempts),
+            std::to_string(rU.rLockTime)
+        });
     }
     rCSV::rWrtAll(rUsrF, rRws);
 }
@@ -119,6 +169,35 @@ void rUsrMgr::rSavWlts() {
 std::string rUsrMgr::rHshPwd(std::string rPwd) {
     size_t rH = std::hash<std::string>{}(rPwd);
     return std::to_string(rH);
+}
+
+bool rUsrMgr::rIsLocked(std::string rLgnNm) {
+    for (const auto& rU : rUsrs) {
+        if (rU.rUsrNm == rLgnNm || (!rU.rCstNm.empty() && rU.rCstNm == rLgnNm)) {
+            if (rU.rLockTime > 0) {
+                std::time_t rNow = std::time(nullptr);
+                double rElapsed = std::difftime(rNow, rU.rLockTime);
+                return rElapsed < 300; // Locked for 5 minutes
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+int rUsrMgr::rGetLockTime(std::string rLgnNm) {
+    for (const auto& rU : rUsrs) {
+        if (rU.rUsrNm == rLgnNm || (!rU.rCstNm.empty() && rU.rCstNm == rLgnNm)) {
+            if (rU.rLockTime > 0) {
+                std::time_t rNow = std::time(nullptr);
+                double rElapsed = std::difftime(rNow, rU.rLockTime);
+                int rRemaining = 300 - (int)rElapsed;
+                return rRemaining > 0 ? rRemaining : 0;
+            }
+            return 0;
+        }
+    }
+    return 0;
 }
 
 std::string rUsrMgr::rGenUsr() {

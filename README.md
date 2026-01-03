@@ -1,10 +1,38 @@
 # Crypto Trading Simulator
 
-Midterm Object Oriented programming project 
-Student Name : Rajagopal Raja Reshika
-Student Number : 240621557
+**Midterm Object Oriented Programming Project**  
+Student Name: Rajagopal Raja Reshika  
+Student Number: 240621557
 
 A C++ based cryptocurrency trading simulator with a terminal-based user interface, market data analysis, and user management.
+
+## Features
+- 🔐 Secure user authentication with password hashing
+- 🔒 Account lockout protection (3 failed attempts, 5-minute lockout)
+- 💼 Multi-cryptocurrency wallet management
+- 📊 Market data analysis and candlestick charts
+- 💱 Trading simulation with real-time market data
+- 📝 Transaction history tracking
+- ⌨️ Interactive arrow-key navigation menu system
+
+## Quick Start
+
+### Compile
+```bash
+make
+```
+
+### Run
+```bash
+make run
+# or
+./crypto_sim
+```
+
+### Clean
+```bash
+make clean
+```
 
 ## Naming Conventions
 

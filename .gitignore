@@ -1,0 +1,35 @@
+# Executables
+crypto_sim
+crypto_toolkit
+Rcrypto_sim
+*.exe
+*.out
+
+# Object files
+*.o
+*.obj
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Test scripts (if temporary)
+test_*.sh
+demo_*.sh
+
+# Build directories
+build/
+bin/

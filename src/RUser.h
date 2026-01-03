@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <ctime>
 
 // user info
 class rUsr {
@@ -11,4 +12,6 @@ public:
     std::string rFullNm;
     std::string rEml;
     std::string rPwdHsh; // hash
+    int rFailAttempts; // failed login attempts
+    std::time_t rLockTime; // when account was locked (0 = not locked)
 };
