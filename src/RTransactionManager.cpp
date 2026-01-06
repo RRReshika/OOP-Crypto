@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RTransactionManager.h"
 #include "RCSVReader.h"
 #include <fstream>
@@ -7,6 +8,7 @@ rTransMgr::rTransMgr(std::string rFn) : rFn(rFn) {
     rLdTrans();
 }
 
+// ===== Student-Made Code: END =====
 void rTransMgr::rSavTrans(rTrans rT) {
     rTranss.push_back(rT);
     // write to CSV

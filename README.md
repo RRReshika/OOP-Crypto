@@ -7,13 +7,16 @@ Student Number: 240621557
 A C++ based cryptocurrency trading simulator with a terminal-based user interface, market data analysis, and user management.
 
 ## Features
--  Secure user authentication with password hashing
+- Secure user authentication with password hashing
 - Account lockout protection (3 failed attempts, 5-minute lockout)
 - Multi-cryptocurrency wallet management
 - Market data analysis and candlestick charts
 - Trading simulation with real-time market data
 - Transaction history tracking
 - Interactive arrow-key navigation menu system
+- Trend analysis (Bullish/Bearish/Neutral)
+- Volatility scoring (Low/Medium/High)
+- Session statistics tracking
 
 ## Quick Start
 
@@ -50,13 +53,16 @@ This project follows a specific naming convention where most classes, functions,
 
 | `rCandle` | Candlestick | Stores Open, High, Low, Close (OHLC) data for a specific timeframe. |
 | `rCSV` | CSV Reader | Utility class for reading and writing CSV files. |
+| `rMenu` | Menu | Main application controller with arrow-key navigation. |
 | `rMktAnls` | Market Analysis | Logic for computing candlestick data from raw market orders. |
 | `rMktDat` | Market Data | Manages the loading and filtering of market orders from `market.csv`. |
 | `rMktOrd` | Market Order | Represents a single order (bid or ask) in the market data. |
 | `rOrd` | Order | A lightweight struct for representing market orders. |
+| `rSessStats` | Session Stats | Tracks session activity (trades, deposits, withdrawals). |
 | `rSim` | Trade Simulator | Core simulation logic, including order generation and user stats. |
 | `rTrans` | Transaction | Represents a single financial transaction (deposit, withdrawal, trade). |
 | `rTransMgr` | Transaction Manager | Manages the persistence and retrieval of user transactions. |
+| `rTrendAnlz` | Trend Analyzer | Analyzes market trends and volatility from candlestick data. |
 | `rUsr` | User | Stores user profile information (ID, name, email, hashed password). |
 | `rUsrMgr` | User Manager | Handles user registration, login, and wallet management. |
 | `rWlt` | Wallet | Tracks cryptocurrency balances for a user. |

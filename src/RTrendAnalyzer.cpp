@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RTrendAnalyzer.h"
 #include <cmath>
 #include <sstream>
@@ -74,6 +75,7 @@ bool rTrendAnlz::rIsStrong(const rCandle& rCndl, double rThresh) {
 }
 
 // calculate volatility using (high-low)/average formula
+// ===== External-Resource-Assisted Code: START =====
 double rTrendAnlz::rCalcVolScore(const rCandle& rCndl) {
     double rAvgPrice = (rCndl.rOp + rCndl.rCl) / 2.0;
     
@@ -82,6 +84,7 @@ double rTrendAnlz::rCalcVolScore(const rCandle& rCndl) {
     double rRange = rCndl.rHi - rCndl.rLo;
     return rRange / rAvgPrice;
 }
+// ===== External-Resource-Assisted Code: END =====
 
 // put volatility into categories
 rVolatility rTrendAnlz::rGetVolLevel(const rCandle& rCndl) {
@@ -132,3 +135,5 @@ std::string rTrendAnlz::rGetVolDetail(const rCandle& rCndl) {
     
     return rSs.str();
 }
+
+// ===== Student-Made Code: END =====

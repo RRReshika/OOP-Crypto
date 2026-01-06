@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RTradeSimulator.h"
 #include <iostream>
 #include <algorithm>
@@ -106,3 +107,5 @@ std::vector<rSim::rSimRes> rSim::rSimTrds(std::string rUsrNm, rUsrMgr& rUsrMgr, 
     rUsrMgr.rSavWlts();
     return rRes;
 }
+
+// ===== Student-Made Code: END =====

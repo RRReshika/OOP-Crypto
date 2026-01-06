@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 #include <map>
@@ -25,3 +26,4 @@ public:
     // currency map
     std::map<std::string, double> rCurs;
 };
+// ===== Student-Made Code: END =====

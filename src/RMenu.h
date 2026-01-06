@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include "RUserManager.h"
 #include "RTransactionManager.h"
@@ -40,3 +41,4 @@ private:
     // helper
     bool rValPrd(const std::string& rProd);
 };
+// ===== Student-Made Code: END =====

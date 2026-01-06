@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 #include <ctime>
@@ -15,3 +16,4 @@ public:
     int rFailAttempts; // failed login attempts
     std::time_t rLockTime; // when account was locked (0 = not locked)
 };
+// ===== Student-Made Code: END =====

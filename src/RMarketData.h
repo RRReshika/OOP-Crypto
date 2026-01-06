@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <vector>
 #include <string>
@@ -35,3 +36,4 @@ private:
     std::vector<rOrd> rOrds;
     std::vector<std::string> rProds;
 };
+// ===== Student-Made Code: END =====

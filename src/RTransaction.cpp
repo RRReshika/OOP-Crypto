@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RTransaction.h"
 
 // constructor
@@ -23,3 +24,5 @@ rTransTyp rTrans::rStr2Typ(std::string rStr) {
     if (rStr == "bid") return rTransTyp::bid;
     return rTransTyp::deposit; // default
 }
+
+// ===== Student-Made Code: END =====

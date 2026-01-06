@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RUserManager.h"
 #include "RCSVReader.h"
 #include <fstream>
@@ -221,3 +222,5 @@ std::string rUsrMgr::rGenUsr() {
     }
     return rUsrNm;
 }
+
+// ===== Student-Made Code: END =====

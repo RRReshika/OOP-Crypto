@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 // Midterm Object Oriented programming project 
 // Student Name : Rajagopal Raja Reshika
 // Student Number : 240621557
@@ -25,3 +26,5 @@ int main() {
 
     return 0;
 }
+
+// ===== Student-Made Code: END =====

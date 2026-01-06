@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <vector>
 #include <string>
@@ -20,3 +21,4 @@ public:
     // get the current time in a nice format
     static std::string rTime();
 };
+// ===== Student-Made Code: END =====

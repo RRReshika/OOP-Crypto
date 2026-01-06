@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RCSVReader.h"
 #include <sstream>
 
@@ -81,6 +82,7 @@ std::string rCSV::rTime() {
     return rSs.str();
 }
 
+// ===== External-Resource-Assisted Code: START =====
 std::vector<std::string> rCSV::rSpl(std::string rLn, char rSep) {
     std::vector<std::string> rTks;
     std::string rTk;
@@ -90,3 +92,6 @@ std::vector<std::string> rCSV::rSpl(std::string rLn, char rSep) {
     }
     return rTks;
 }
+// ===== External-Resource-Assisted Code: END =====
+
+// ===== Student-Made Code: END =====

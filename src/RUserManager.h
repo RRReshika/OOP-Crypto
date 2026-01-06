@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <vector>
 #include <string>
@@ -41,3 +42,4 @@ private:
     // random 10-digit ID
     std::string rGenUsr();
 };
+// ===== Student-Made Code: END =====

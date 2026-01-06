@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #include "RMarketAnalysis.h"
 #include <algorithm>
 #include <iostream>
@@ -59,3 +60,5 @@ std::string rMktAnls::rTrunTime(std::string rTime, std::string rTf) {
     }
     return rTime;
 }
+
+// ===== Student-Made Code: END =====

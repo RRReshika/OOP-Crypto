@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 
@@ -12,3 +13,4 @@ public:
     double rLo;      // lowest price
     double rCl;      // final price
 };
+// ===== Student-Made Code: END =====

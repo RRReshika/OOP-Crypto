@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <vector>
 #include <string>
@@ -20,3 +21,4 @@ private:
     // helper to load from file
     void rLdTrans();
 };
+// ===== Student-Made Code: END =====

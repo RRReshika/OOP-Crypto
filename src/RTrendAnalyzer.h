@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 #include "RCandlestick.h"
@@ -30,3 +31,4 @@ public:
     static std::string rGetVolDesc(rVolatility rV);
     static std::string rGetVolDetail(const rCandle& rCndl);
 };
+// ===== Student-Made Code: END =====

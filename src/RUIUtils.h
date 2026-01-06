@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 #include <iostream>
@@ -74,6 +75,7 @@ namespace rUI {
 
     // Raw character input for menu navigation only
     // Returns: -1=error, 10/13=enter, 1000=up, 1001=down
+    // ===== External-Resource-Assisted Code: START =====
     inline int rGetKey() {
         struct termios rOld, rNew;
         
@@ -118,6 +120,7 @@ namespace rUI {
         
         return rKey;
     }
+    // ===== External-Resource-Assisted Code: END =====
 
     // Modal menu with explicit lifecycle control
     // LOOP LIFECYCLE:
@@ -217,3 +220,4 @@ namespace rUI {
         std::cout << rB << rYe << " [!] " << rR << rMsg << "\n";
     }
 }
+// ===== Student-Made Code: END =====

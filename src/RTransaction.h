@@ -1,3 +1,4 @@
+// ===== Student-Made Code: START =====
 #pragma once
 #include <string>
 
@@ -26,3 +27,4 @@ public:
     static std::string rTyp2Str(rTransTyp rTyp);
     static rTransTyp rStr2Typ(std::string rStr);
 };
+// ===== Student-Made Code: END =====
